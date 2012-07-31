@@ -89,8 +89,6 @@ var Radar = (function(){
 			maj: generateScaleFrom(notes.a.maj, key.delta)
 		};
 	});
-	
-	console.log(notes);
 
 	var currentKey = 'a', currentScale = 'min';
 	
@@ -438,7 +436,6 @@ var Radar = (function(){
 			keySelector.value = currentKey;
 		}
 
-		console.log("Key:", currentKey);
 	}
 
 	function scaleSelectorChanged( event ) {
@@ -450,8 +447,6 @@ var Radar = (function(){
 		} else {
 			scaleSelector.value = currentScale;
 		}
-
-		console.log("Scale:", currentScale);
 
 	}
 
