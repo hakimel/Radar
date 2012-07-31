@@ -62,7 +62,12 @@ var Radar = (function(){
 			pulseVelocity = 0.008,
 			pulseQuantity = 3,
 
+			// Seed is used to generate the note field so that random
+			// one persons's grid can be saved & replicated
+			seed = Math.floor( Math.random() * 10000 ),
+
 			nodes = [],
+			savedNodes = [],
 			pulses = [];
 	
 	// Generate some scales (a, d & e)
@@ -71,10 +76,10 @@ var Radar = (function(){
 	var notes = {};
 	notes.a = {
 		min: [
-			220.0,246.9,261.6,329.6,349.2,415.3,440.0
+			220.0,246.9,261.6,293.7,329.6,349.2,415.3,440.0,493.9,523.3
 		],
 		maj: [
-			220.0,246.9,277.2,329.6,370.0,415.3,440.0
+			220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4
 		]
 	};
 
@@ -90,7 +95,7 @@ var Radar = (function(){
 		};
 	});
 
-	var currentKey = 'a', currentScale = 'min';
+	var currentKey = 'a', currentScale = 'maj';
 	
 	/**
 	 * 
@@ -102,6 +107,8 @@ var Radar = (function(){
 		clearButton = document.querySelector( '#wrapper .controls .clear' );
 		keySelector = document.querySelector( '#wrapper .controls .key' );
 		scaleSelector = document.querySelector( '#wrapper .controls .scale' );
+		SaveButton = document.querySelector( '#wrapper .controls .save' );
+		saveURLBox = document.querySelector('#wrapper .controls .url');
 		
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');
@@ -113,8 +120,38 @@ var Radar = (function(){
 					addKeyOption(key);
 				}
 			}
+
+			// Restore grid from query string
+			if( document.location.search.length > 0 ) {
+				var queryString = document.location.search.slice(1,-1),
+						query = queryString.split('+');
+
+				if( query.length < 3 ) { return; }
+
+				try {
+					// Seed should be zeroth parameter
+					seed = parseInt(query[0], 10);
+					// First and second are key and scale
+					if( notes.hasOwnProperty(query[1]) ){
+						currentKey = query[1];
+					}
+					if( notes[currentKey].hasOwnProperty(query[2]) ){
+						currentScale = query[2];
+					}
+					// Grab the rest of the query to activate the nodes
+					var strNodes = query.slice(3);
+					strNodes.forEach(function (nodeNum) {
+						try {
+							savedNodes.push(parseInt(nodeNum, 10));
+						} catch(e) {}
+					});
+				} catch (e) {
+					return;
+				}
+			}
 			
 			clearButton.addEventListener('click', onClearButtonClicked, false);
+			SaveButton.addEventListener('click', onSaveButtonClicked, false);
 			document.addEventListener('mousedown', onDocumentMouseDown, false);
 			document.addEventListener('mousemove', onDocumentMouseMove, false);
 			document.addEventListener('mouseup', onDocumentMouseUp, false);
@@ -123,8 +160,11 @@ var Radar = (function(){
 			canvas.addEventListener('touchend', onCanvasTouchEnd, false);
 			window.addEventListener('resize', onWindowResize, false);
 
-			keySelector.addEventListener('change', keySelectorChanged, false);
-			scaleSelector.addEventListener('change', scaleSelectorChanged, false);
+			keySelector.addEventListener('change', onKeySelectorChanged, false);
+			scaleSelector.addEventListener('change', onScaleSelectorChanged, false);
+
+			keySelector.value = currentKey;
+			scaleSelector.value = currentScale;
 			
 			// Force an initial layout
 			onWindowResize();
@@ -151,12 +191,17 @@ var Radar = (function(){
 			j,
 			x = 0,
 			y = 0,
-			len = NODES_X * NODES_Y;
+			len = NODES_X * NODES_Y,
+			length;
 
 		// Generate nodes
 		for( y = 0; y < NODES_Y; y++ ) {
 			for( x = 0; x < NODES_X; x++ ) {
-				nodes.push( new Node( cx + x * cx, cy + y * cy, x, y ) );
+				length = nodes.push( new Node( cx + x * cx, cy + y * cy, x, y ) );
+				nodeNum = y * NODES_X + x;
+				if( savedNodes.indexOf(nodeNum) !== -1 ) {
+					nodes[length - 1].activate();
+				}
 			}
 		}
 
@@ -366,6 +411,19 @@ var Radar = (function(){
 			nodes[i].deactivate();
 		}
 	}
+
+	function onSaveButtonClicked( event ) {
+		var saveData = [seed, currentKey, currentScale];
+		nodes.forEach(function (node, index) {
+			if( node.active ) {
+				saveData.push(index);
+			}
+		});
+		var url = document.location.protocol + '//' + document.location.host + '/?' + saveData.join('+');
+		history.pushState(null, null, url);
+		saveURLBox.value = url;
+		saveURLBox.className += ' show';
+	}
 	
 	function onDocumentMouseDown( event ) {
 		mouse.down = true;
@@ -426,7 +484,7 @@ var Radar = (function(){
 		canvas.height = world.height;
 	}
 
-	function keySelectorChanged( event ) {
+	function onKeySelectorChanged( event ) {
 		// Change the current key
 		var newKey = keySelector.value;
 
@@ -438,7 +496,7 @@ var Radar = (function(){
 
 	}
 
-	function scaleSelectorChanged( event ) {
+	function onScaleSelectorChanged( event ) {
 		// Change the current scale
 		var newScale = scaleSelector.value;
 
@@ -468,7 +526,14 @@ var Radar = (function(){
 		this.size = 1;
 		this.sizeTarget = this.size;
 			
-		this.note = Math.floor(Math.random() * notes[currentKey][currentScale].length);
+		// This bit of randomness should make sure that the notes are different
+		// and unpredictable, yet reproducably so when the same seed is used.
+		// indexv * NODES_X + indexh reproduces the overall node number,
+		// this * seed % the number of notes in the current scale in the key of A
+		// produces something reproducable with the same seed, although there's still
+		// a degree of linearity becuase of the modulus: notes rise from right to left
+		// with a repeating patter top to bottom.
+		this.note = seed * (indexv * NODES_X + indexh) % notes.a[currentScale].length;
 
 		this.offsetX = 0;
 		this.offsetY = 0;
@@ -491,23 +556,23 @@ var Radar = (function(){
 
 		this.attack = 0.02;
 		this.release = 0.8;
-	}
+	};
 	Node.prototype.distanceToNode = function( node ) {
 		var dx = node.indexh - this.indexh;
 		var dy = node.indexv - this.indexv;
 
 		return Math.sqrt(dx*dx + dy*dy);
-	}
+	};
 	Node.prototype.activate = function() {
 		this.active = true;
 		this.sizeTarget = 5;
 		this.color = 'rgba(110,255,210,0.8)';
-	}
+	};
 	Node.prototype.deactivate = function() {
 		this.active = false;
 		this.sizeTarget = 1;
 		this.color = '#fff';
-	}
+	};
 	Node.prototype.play = function() {
 		if( !this.audiolet ) {
 			this.generate();
@@ -517,7 +582,7 @@ var Radar = (function(){
 
 		this.synth = new Synth( this.audiolet, this.frequency, this.attack, this.release );
 		this.synth.connect( this.audiolet.output );
-	}
+	};
 	Node.prototype.highlight = function( delay ) {
 		if( delay ) {
 			setTimeout( function() {
@@ -529,7 +594,7 @@ var Radar = (function(){
 		else {
 			this.strength = 1;
 		}
-	}
+	};
 
 	/**
 	 * Represents a pulsewave that triggers nodes.
