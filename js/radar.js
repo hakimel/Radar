@@ -7,8 +7,8 @@ var Radar = (function(){
 	var NODES_X = 12,
 		NODES_Y = 12,
 
-		PULSE_VELOCITY = 0.008,
-		PULSE_QUANTITY = 3,
+		PULSE_VELOCITY = 0.01,
+		PULSE_QUANTITY = 2,
 
 		// Distance threshold between active node and pulse
 		ACTIVATION_DISTANCE = 20,
