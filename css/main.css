@@ -217,6 +217,19 @@ header {
 			background: rgba( 255, 255, 255, 0.2 );
 		}
 
+	#wrapper .controls .url {
+		opacity: 0;
+		-webkit-transition: all .12s ease;
+		   -moz-transition: all .12s ease;
+		    -ms-transition: all .12s ease;
+		     -o-transition: all .12s ease;
+		        transition: all .12s ease;
+	}
+	#wrapper .controls .url.show {
+		opacity: 1;
+	}
+
+
 #wrapper canvas {
 	position: absolute;
 	top: 0;
