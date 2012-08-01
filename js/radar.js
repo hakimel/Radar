@@ -427,7 +427,7 @@ var Radar = (function(){
 				saveData.push(index);
 			}
 		});
-		var url = document.location.protocol + '//' + document.location.host + '/?' + saveData.join('+');
+		var url = document.location.protocol + '//' + document.location.host + document.location.pathname + '?' + saveData.join('+');
 		history.pushState(null, null, url);
 		saveURLBox.value = url;
 		saveURLBox.className += ' show';
