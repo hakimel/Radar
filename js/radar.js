@@ -69,6 +69,9 @@ var Radar = (function(){
 
 			// Seed is used to generate the note field so that random
 			// one persons's grid can be saved & replicated
+			// Some patterns to try:
+			//		?8643+d+maj+8+30+43+55+66+69
+			//		?8643+a+min+30+43+44+55+58+93+106+141
 			seed = Math.floor( Math.random() * 10000 ),
 
 			nodes = [],
