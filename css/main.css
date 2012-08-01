@@ -149,7 +149,7 @@ header {
 #wrapper .controls {
 	position: absolute;
 	height: 20px;
-	top: -30px;
+	top: -32px;
 	left: 0px;
 	width: 100%;
 	color: #999;
@@ -188,15 +188,22 @@ header {
 			opacity: 0;
 		}
 
+	#wrapper .controls .options .key-label {
+		margin-right: 5px;
+		font-size: 12px;
+	}
+
 	#wrapper .controls button {
-		padding: 6px 8px;
+		padding: 4px 6px;
 
 		color: #999;
-		background: none;
+		background: rgba( 255, 255, 255, 0.05 );
 		opacity: 1;
 		border: none;
 		border-radius: 2px;
 		cursor: pointer;
+		font-size: 12px;
+		margin-left: 12px;
 
 		-webkit-transition: all .12s ease;
 		   -moz-transition: all .12s ease;
@@ -206,7 +213,8 @@ header {
 	}
 		#wrapper .controls button:hover {
 			opacity: 1;
-			background: rgba( 255, 255, 255, 0.1 );
+			color: #fff;
+			background: rgba( 255, 255, 255, 0.2 );
 		}
 
 #wrapper canvas {
@@ -214,5 +222,3 @@ header {
 	top: 0;
 	left: 0;
 }
-
-
