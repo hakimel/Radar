@@ -131,7 +131,7 @@ var Radar = (function(){
 
 			// Restore grid from query string
 			if( document.location.search.length > 0 ) {
-				var queryString = document.location.search.slice(1,-1),
+				var queryString = document.location.search.slice(1),
 						query = queryString.split('+');
 
 				if( query.length < 3 ) { return; }
@@ -207,8 +207,10 @@ var Radar = (function(){
 			for( x = 0; x < NODES_X; x++ ) {
 				length = nodes.push( new Node( cx + x * cx, cy + y * cy, x, y ) );
 				nodeNum = y * NODES_X + x;
+
 				if( savedNodes.indexOf(nodeNum) !== -1 ) {
 					nodes[length - 1].activate();
+					container.className = container.className.replace( 'empty', '' );
 				}
 			}
 		}
@@ -264,7 +266,7 @@ var Radar = (function(){
 						mouse.action = 'activate';
 						node.activate();
 
-						container.className = '';
+						container.className = container.className.replace( 'empty', '' );
 					}
 					else if( mouse.action !== 'activate' && node.active === true ) {
 						mouse.action = 'deactivate';
