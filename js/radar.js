@@ -7,8 +7,13 @@ var Radar = (function(){
 	var NODES_X = 12,
 		NODES_Y = 12,
 
+		PULSE_VELOCITY = 0.01,
+		PULSE_QUANTITY = 2,
+
+		// Distance threshold between active node and pulse
 		ACTIVATION_DISTANCE = 20,
 
+		// Number of neighboring nodes to push aside on impact
 		WAVE_RADIUS = 3;
 	
 	// The world dimensions
@@ -56,7 +61,7 @@ var Radar = (function(){
 			clearButton,
 
 			delta = 0,
-			timeLastFrame = 0,
+			deltaTime = 0,
 			activateNodeDistance = 0,
 
 			pulseVelocity = 0.008,
@@ -152,7 +157,7 @@ var Radar = (function(){
 			
 			clearButton.addEventListener('click', onClearButtonClicked, false);
 			SaveButton.addEventListener('click', onSaveButtonClicked, false);
-			document.addEventListener('mousedown', onDocumentMouseDown, false);
+			canvas.addEventListener('mousedown', onDocumentMouseDown, false);
 			document.addEventListener('mousemove', onDocumentMouseMove, false);
 			document.addEventListener('mouseup', onDocumentMouseUp, false);
 			canvas.addEventListener('touchstart', onCanvasTouchStart, false);
@@ -169,7 +174,7 @@ var Radar = (function(){
 			// Force an initial layout
 			onWindowResize();
 			
-			timeLastFrame = Date.now();
+			deltaTime = Date.now();
 
 			setup();
 			update();
@@ -218,19 +223,19 @@ var Radar = (function(){
 		}
 
 		// Add new pulses when needed
-		for( var i = 0; i < pulseQuantity; i++ ) {
+		for( var i = 0; i < PULSE_QUANTITY; i++ ) {
 			pulses.push( new Pulse( 
 				world.center.x,
 				world.center.y,
-				i * -( 1 / pulseQuantity ) // strength
+				i * -( 1 / PULSE_QUANTITY ) // strength
 			) );
 		}
 	}
 	
 	function update() {
-		delta = 1 + ( 1 - Math.min( ( Date.now() - timeLastFrame ) / ( 1000 / 60 ), 1 ) );
+		delta = 1 + ( 1 - Math.min( ( Date.now() - deltaTime ) / ( 1000 / 60 ), 1 ) );
 		
-		timeLastFrame = Date.now();
+		deltaTime = Date.now();
 
 		clear();
 		step();
@@ -296,7 +301,7 @@ var Radar = (function(){
 		for( i = 0; i < pulses.length; i++ ) {
 			var pulse = pulses[i];
 
-			pulse.strength += pulseVelocity;
+			pulse.strength += PULSE_VELOCITY;
 
 			// Remove used up pulses
 			if( pulse.strength > 1 ) {
@@ -493,7 +498,6 @@ var Radar = (function(){
 		} else {
 			keySelector.value = currentKey;
 		}
-
 	}
 
 	function onScaleSelectorChanged( event ) {
@@ -505,7 +509,6 @@ var Radar = (function(){
 		} else {
 			scaleSelector.value = currentScale;
 		}
-
 	}
 
 	/**
