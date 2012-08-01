@@ -58,6 +58,9 @@ var Radar = (function(){
 			canvas,
 			context,
 
+			sequencer,
+			sequencerInput,
+
 			clearButton,
 
 			delta = 0,
@@ -117,6 +120,8 @@ var Radar = (function(){
 		scaleSelector = document.querySelector( '#wrapper .controls .scale' );
 		SaveButton = document.querySelector( '#wrapper .controls .save' );
 		saveURLBox = document.querySelector('#wrapper .controls .url');
+		sequencer = document.querySelector( '#wrapper .sequencer' );
+		sequencerInput = document.querySelector( '#wrapper .sequencer-input' );
 		
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');

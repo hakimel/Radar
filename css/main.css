@@ -140,7 +140,6 @@ header {
 	
 	font-size: 12px;
 	color: #f4f4f4;
-	text-align: center;
 	cursor: default;
 
 	box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
@@ -229,6 +228,40 @@ header {
 		opacity: 1;
 	}
 
+	/* SEQUENCER */
+	#wrapper .controls .sequencer {
+		position: absolute;
+		left: 0;
+		background: #222;
+		box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
+		border-radius: 2px;
+	}
+		#wrapper .controls .sequencer li {
+			display: inline-block;
+			padding: 6px;
+			width: 90px;
+			text-align: center;
+		}
+			#wrapper .controls .sequencer li+li {
+				border-left: 1px solid #333;
+			}
+
+	#wrapper .controls .sequencer-input {
+		display: none;
+		position: absolute;
+		left: 0;
+		border-radius: 2px;
+		margin-top: 4px;
+
+		background: #222;
+	}
+		#wrapper .controls .sequencer-input.open {
+			display: block;
+		}
+
+		#wrapper .controls .sequencer-input li {
+			padding: 6px;
+		}
 
 #wrapper canvas {
 	position: absolute;
