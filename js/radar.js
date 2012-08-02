@@ -62,7 +62,7 @@ var Radar = (function(){
 			sequencer,
 			sequencerInput,
 
-			clearButton,
+			resetButton,
 
 			delta = 0,
 			deltaTime = 0,
@@ -117,7 +117,7 @@ var Radar = (function(){
 		container = document.getElementById( 'wrapper' );
 		canvas = document.querySelector( '#wrapper canvas' );
 		sidebar = document.querySelector( '#wrapper .sidebar' );
-		clearButton = document.querySelector( '#wrapper .sidebar .clear' );
+		resetButton = document.querySelector( '#wrapper .sidebar .reset' );
 		saveButton = document.querySelector( '#wrapper .sidebar .save' );
 		sequencer = document.querySelector( '#wrapper .sequencer' );
 		sequencerInput = document.querySelector( '#wrapper .sequencer-input' );
@@ -162,7 +162,7 @@ var Radar = (function(){
 				}
 			}
 			
-			clearButton.addEventListener('click', onClearButtonClicked, false);
+			resetButton.addEventListener('click', onResetButtonClicked, false);
 			saveButton.addEventListener('click', onSaveButtonClicked, false);
 			canvas.addEventListener('mousedown', onDocumentMouseDown, false);
 			document.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -414,7 +414,7 @@ var Radar = (function(){
 		return newScale;
 	}
 
-	function onClearButtonClicked( event ) {
+	function onResetButtonClicked( event ) {
 		for( var i = 0, len = nodes.length; i < len; i++ ) {
 			nodes[i].deactivate();
 		}
