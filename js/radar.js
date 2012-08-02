@@ -8,6 +8,7 @@ var Radar = (function(){
 		NODES_Y = 12,
 
 		BEAT_VELOCITY = 0.01,
+		BEAT_FREQUENCY = 2,
 		BEAT_QUANTITY = 2,
 
 		// Distance threshold between active node and beat
@@ -67,9 +68,6 @@ var Radar = (function(){
 		delta = 0,
 		deltaTime = 0,
 		activateNodeDistance = 0,
-
-		beatVelocity = 0.008,
-		beatQuantity = 3,
 
 		// Seed is used to generate the note field so that random
 		// one persons's grid can be saved & replicated
@@ -228,10 +226,9 @@ var Radar = (function(){
 
 		// Add new beats when needed
 		for( var i = 0; i < BEAT_QUANTITY; i++ ) {
-			beats.push( new Pulse( 
+			beats.push( new Beat( 
 				world.center.x,
-				world.center.y,
-				i * -( 1 / BEAT_QUANTITY ) // strength
+				world.center.y
 			) );
 		}
 	}
@@ -302,16 +299,27 @@ var Radar = (function(){
 			}
 		}
 
+		var activeBeats = 0,
+			firstActiveBeatStrength = 0;
+
+		// Updates the properties of all beats
 		for( i = 0; i < beats.length; i++ ) {
 			var beat = beats[i];
 
-			beat.strength += BEAT_VELOCITY;
+			if( beat.active ) {
+				beat.strength += BEAT_VELOCITY;
+				activeBeats += 1;
+
+				if( firstActiveBeatStrength === 0 ) {
+					firstActiveBeatStrength = beat.strength;
+				}
+			}
 
 			// Remove used up beats
 			if( beat.strength > 1 ) {
-				beat.reset();
+				beat.deactivate();
 			}
-			else {
+			else if( beat.active ) {
 				// Check for collision with nodes
 				for( j = 0, len = nodes.length; j < len; j++ ) {
 					var node = nodes[j];
@@ -324,11 +332,17 @@ var Radar = (function(){
 						node.play();
 						node.highlight( 100 );
 					}
-					// Causes a slight effect in all inactive dots
-					else if( !node.active && distance < ACTIVATION_DISTANCE ) {
-						// node.strength = 0.15;
-					}
 				}
+			}
+		}
+
+		// Activates new beats as needed
+		for( i = 0; i < beats.length; i++ ) {
+			var beat = beats[i];
+			
+			if( activeBeats === 0 || ( !beat.active && activeBeats < BEAT_FREQUENCY && firstActiveBeatStrength > 1 / BEAT_FREQUENCY ) ) {
+				activeBeats ++;
+				beat.activate();
 			}
 		}
 	}
@@ -607,17 +621,23 @@ var Radar = (function(){
 	/**
 	 * Represents a beatwave that triggers nodes.
 	 */
-	function Pulse( x, y, strength ) {
+	function Beat( x, y, strengthOffset ) {
 		// invoke super
 		this.constructor.apply( this, arguments );
 
-		this.index = ++id;
 		this.size = Math.max( world.width, world.height ) * 0.65;
-		this.strength = strength || 0;
-	}
-	Pulse.prototype = new Point();
-	Pulse.prototype.reset = function() {
+		this.active = false;
 		this.index = ++id;
+		this.strength = 0;
+	}
+	Beat.prototype = new Point();
+	Beat.prototype.activate = function() {
+		this.active = true;
+		this.index = ++id;
+		this.strength = 0;
+	}
+	Beat.prototype.deactivate = function() {
+		this.active = false;
 		this.strength = 0;
 	}
 
