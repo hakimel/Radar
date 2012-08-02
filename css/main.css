@@ -187,8 +187,8 @@ header {
 			opacity: 0;
 		}
 
-	#wrapper .controls .options .key-label {
-		margin-right: 5px;
+	#wrapper .controls .options button {
+		margin: 0 5px 0 0;
 		font-size: 12px;
 	}
 
