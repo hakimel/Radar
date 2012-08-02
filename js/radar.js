@@ -106,7 +106,8 @@ var Radar = (function(){
 	});
 
 	var currentKey = 'a', 
-		currentScale = 'maj';
+		currentScale = 'maj',
+		currentBeat = null;
 	
 	/**
 	 * 
@@ -177,6 +178,7 @@ var Radar = (function(){
 			deltaTime = Date.now();
 
 			setup();
+			updateBeats();
 			update();
 		}
 		else {
@@ -212,6 +214,7 @@ var Radar = (function(){
 			}
 		}
 
+		// Determine node neighbors
 		for( i = 0; i < len; i++ ) {
 			var nodeA = nodes[i];
 
@@ -223,14 +226,28 @@ var Radar = (function(){
 				}
 			}
 		}
+	}
 
-		// Add new beats when needed
-		for( var i = 0; i < BEAT_QUANTITY; i++ ) {
-			beats.push( new Beat( 
-				world.center.x,
-				world.center.y
-			) );
-		}
+	function updateBeats() {
+		var beatElements = sequencer.querySelectorAll( 'li[data-key]' );
+
+		for( var i = 0, len = beatElements.length; i < len; i++ ) {
+			var element = beatElements[i];
+
+			var elementKey = element.getAttribute( 'data-key' ),
+				elementScale = element.getAttribute( 'data-scale' );
+
+			if( beats.length <= i ) {
+				beats.push( new Beat( 
+					world.center.x,
+					world.center.y,
+					elementKey,
+					elementScale,
+					i
+				) );
+			}
+
+		};
 	}
 	
 	function update() {
@@ -327,23 +344,24 @@ var Radar = (function(){
 					// Distance between the beat wave and node
 					var distance = Math.abs( node.distanceTo( beat.x, beat.y ) - ( beat.size * beat.strength ) );
 
-					if( node.active && node.collisionIndex < beat.index && distance < ACTIVATION_DISTANCE ) {
-						node.collisionIndex = beat.index;
-						node.play();
+					if( node.active && node.collisionLevel < beat.level && distance < ACTIVATION_DISTANCE ) {
+						node.collisionLevel = beat.level;
+						node.play( beat.key, beat.scale );
 						node.highlight( 100 );
 					}
 				}
 			}
 		}
 
-		// Activates new beats as needed
-		for( i = 0; i < beats.length; i++ ) {
-			var beat = beats[i];
-			
-			if( activeBeats === 0 || ( !beat.active && activeBeats < BEAT_FREQUENCY && firstActiveBeatStrength > 1 / BEAT_FREQUENCY ) ) {
-				activeBeats ++;
-				beat.activate();
-			}
+		var nextBeat = currentBeat ? beats[ ( currentBeat.index + 1 ) % beats.length ] : null;
+
+		if( !currentBeat ) {
+			currentBeat = beats[0];
+			currentBeat.activate();
+		}
+		else if( !nextBeat.active && activeBeats < BEAT_FREQUENCY && currentBeat.strength > 1 / BEAT_FREQUENCY ) {
+			currentBeat = nextBeat;
+			currentBeat.activate();
 		}
 	}
 	
@@ -399,7 +417,7 @@ var Radar = (function(){
 		for( var i = 0, len = beats.length; i < len; i++ ) {
 			var beat = beats[i];
 
-			if( beat.strength > 0 ) {
+			if( beat.active && beat.strength > 0 ) {
 				context.beginPath();
 				context.arc( beat.x, beat.y, Math.max( (beat.size * beat.strength)-2, 0 ), 0, Math.PI * 2, true );
 				context.lineWidth = 8;
@@ -542,7 +560,7 @@ var Radar = (function(){
 
 		this.id = ++id;
 		this.neighbors = [];
-		this.collisionIndex = 0;
+		this.collisionLevel = 0;
 		this.active = false;
 		this.strength = 0;
 		this.size = 1;
@@ -572,9 +590,7 @@ var Radar = (function(){
 		this.audiolet = new Audiolet( 44100, 2 );
 		
 		var factorY = 1 - ( this.y / world.height ),
-				factorD = this.distanceTo( world.center.x, world.center.y );
-			
-		this.frequency = notes[currentKey][currentScale][this.note];
+			factorD = this.distanceTo( world.center.x, world.center.y );
 
 		this.attack = 0.02;
 		this.release = 0.8;
@@ -595,12 +611,12 @@ var Radar = (function(){
 		this.sizeTarget = 1;
 		this.color = '#fff';
 	};
-	Node.prototype.play = function() {
+	Node.prototype.play = function( key, scale ) {
 		if( !this.audiolet ) {
 			this.generate();
 		}
 
-		this.frequency = notes[currentKey][currentScale][this.note];
+		this.frequency = notes[ key ][ scale ][ this.note ];
 
 		this.synth = new Synth( this.audiolet, this.frequency, this.attack, this.release );
 		this.synth.connect( this.audiolet.output );
@@ -621,24 +637,27 @@ var Radar = (function(){
 	/**
 	 * Represents a beatwave that triggers nodes.
 	 */
-	function Beat( x, y, strengthOffset ) {
+	function Beat( x, y, key, scale, index ) {
 		// invoke super
 		this.constructor.apply( this, arguments );
+		
+		this.key = key;
+		this.scale = scale;
+		this.index = index;
 
+		this.level = ++id;
 		this.size = Math.max( world.width, world.height ) * 0.65;
 		this.active = false;
-		this.index = ++id;
 		this.strength = 0;
 	}
 	Beat.prototype = new Point();
 	Beat.prototype.activate = function() {
+		this.level = ++id;
 		this.active = true;
-		this.index = ++id;
 		this.strength = 0;
 	}
 	Beat.prototype.deactivate = function() {
 		this.active = false;
-		this.strength = 0;
 	}
 
 	/**
