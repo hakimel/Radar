@@ -7,10 +7,10 @@ var Radar = (function(){
 	var NODES_X = 12,
 		NODES_Y = 12,
 
-		PULSE_VELOCITY = 0.01,
-		PULSE_QUANTITY = 2,
+		BEAT_VELOCITY = 0.01,
+		BEAT_QUANTITY = 2,
 
-		// Distance threshold between active node and pulse
+		// Distance threshold between active node and beat
 		ACTIVATION_DISTANCE = 20,
 
 		// Number of neighboring nodes to push aside on impact
@@ -53,34 +53,34 @@ var Radar = (function(){
 	
 	var id = 0,
 
-			container,
+		container,
 
-			canvas,
-			context,
+		canvas,
+		context,
 
-			sidebar,
-			sequencer,
-			sequencerInput,
+		sidebar,
+		sequencer,
+		sequencerInput,
 
-			resetButton,
+		resetButton,
 
-			delta = 0,
-			deltaTime = 0,
-			activateNodeDistance = 0,
+		delta = 0,
+		deltaTime = 0,
+		activateNodeDistance = 0,
 
-			pulseVelocity = 0.008,
-			pulseQuantity = 3,
+		beatVelocity = 0.008,
+		beatQuantity = 3,
 
-			// Seed is used to generate the note field so that random
-			// one persons's grid can be saved & replicated
-			// Some patterns to try:
-			//		?8643+d+maj+8+30+43+55+66+69
-			//		?8643+a+min+30+43+44+55+58+93+106+141
-			seed = Math.floor( Math.random() * 10000 ),
+		// Seed is used to generate the note field so that random
+		// one persons's grid can be saved & replicated
+		// Some patterns to try:
+		//		?8643+d+maj+8+30+43+55+66+69
+		//		?8643+a+min+30+43+44+55+58+93+106+141
+		seed = Math.floor( Math.random() * 10000 ),
 
-			nodes = [],
-			savedNodes = [],
-			pulses = [];
+		nodes = [],
+		savedNodes = [],
+		beats = [];
 	
 	// Generate some scales (a, d & e)
 	// Frequencies from http://www.seventhstring.com/resources/notefrequencies.html
@@ -107,7 +107,8 @@ var Radar = (function(){
 		};
 	});
 
-	var currentKey = 'a', currentScale = 'maj';
+	var currentKey = 'a', 
+		currentScale = 'maj';
 	
 	/**
 	 * 
@@ -225,12 +226,12 @@ var Radar = (function(){
 			}
 		}
 
-		// Add new pulses when needed
-		for( var i = 0; i < PULSE_QUANTITY; i++ ) {
-			pulses.push( new Pulse( 
+		// Add new beats when needed
+		for( var i = 0; i < BEAT_QUANTITY; i++ ) {
+			beats.push( new Pulse( 
 				world.center.x,
 				world.center.y,
-				i * -( 1 / PULSE_QUANTITY ) // strength
+				i * -( 1 / BEAT_QUANTITY ) // strength
 			) );
 		}
 	}
@@ -301,25 +302,25 @@ var Radar = (function(){
 			}
 		}
 
-		for( i = 0; i < pulses.length; i++ ) {
-			var pulse = pulses[i];
+		for( i = 0; i < beats.length; i++ ) {
+			var beat = beats[i];
 
-			pulse.strength += PULSE_VELOCITY;
+			beat.strength += BEAT_VELOCITY;
 
-			// Remove used up pulses
-			if( pulse.strength > 1 ) {
-				pulse.reset();
+			// Remove used up beats
+			if( beat.strength > 1 ) {
+				beat.reset();
 			}
 			else {
 				// Check for collision with nodes
 				for( j = 0, len = nodes.length; j < len; j++ ) {
 					var node = nodes[j];
 
-					// Distance between the pulse wave and node
-					var distance = Math.abs( node.distanceTo( pulse.x, pulse.y ) - ( pulse.size * pulse.strength ) );
+					// Distance between the beat wave and node
+					var distance = Math.abs( node.distanceTo( beat.x, beat.y ) - ( beat.size * beat.strength ) );
 
-					if( node.active && node.collisionIndex < pulse.index && distance < ACTIVATION_DISTANCE ) {
-						node.collisionIndex = pulse.index;
+					if( node.active && node.collisionIndex < beat.index && distance < ACTIVATION_DISTANCE ) {
+						node.collisionIndex = beat.index;
 						node.play();
 						node.highlight( 100 );
 					}
@@ -380,21 +381,21 @@ var Radar = (function(){
 			context.fill();
 		}
 
-		// Render pulses
-		for( var i = 0, len = pulses.length; i < len; i++ ) {
-			var pulse = pulses[i];
+		// Render beats
+		for( var i = 0, len = beats.length; i < len; i++ ) {
+			var beat = beats[i];
 
-			if( pulse.strength > 0 ) {
+			if( beat.strength > 0 ) {
 				context.beginPath();
-				context.arc( pulse.x, pulse.y, Math.max( (pulse.size * pulse.strength)-2, 0 ), 0, Math.PI * 2, true );
+				context.arc( beat.x, beat.y, Math.max( (beat.size * beat.strength)-2, 0 ), 0, Math.PI * 2, true );
 				context.lineWidth = 8;
-				context.strokeStyle = 'rgba(90,255,180,'+ ( 0.2 * ( 1 - pulse.strength ) ) +')';
+				context.strokeStyle = 'rgba(90,255,180,'+ ( 0.2 * ( 1 - beat.strength ) ) +')';
 				context.stroke();
 
 				context.beginPath();
-				context.arc( pulse.x, pulse.y, pulse.size * pulse.strength, 0, Math.PI * 2, true );
+				context.arc( beat.x, beat.y, beat.size * beat.strength, 0, Math.PI * 2, true );
 				context.lineWidth = 2;
-				context.strokeStyle = 'rgba(90,255,180,'+ ( 0.8 * ( 1 - pulse.strength ) ) +')';
+				context.strokeStyle = 'rgba(90,255,180,'+ ( 0.8 * ( 1 - beat.strength ) ) +')';
 				context.stroke();
 			}
 		}
@@ -604,7 +605,7 @@ var Radar = (function(){
 	};
 
 	/**
-	 * Represents a pulsewave that triggers nodes.
+	 * Represents a beatwave that triggers nodes.
 	 */
 	function Pulse( x, y, strength ) {
 		// invoke super
