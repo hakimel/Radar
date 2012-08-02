@@ -58,6 +58,7 @@ var Radar = (function(){
 			canvas,
 			context,
 
+			sidebar,
 			sequencer,
 			sequencerInput,
 
@@ -115,11 +116,9 @@ var Radar = (function(){
 		// Run selectors and cache element references
 		container = document.getElementById( 'wrapper' );
 		canvas = document.querySelector( '#wrapper canvas' );
-		clearButton = document.querySelector( '#wrapper .controls .clear' );
-		keySelector = document.querySelector( '#wrapper .controls .key' );
-		scaleSelector = document.querySelector( '#wrapper .controls .scale' );
-		SaveButton = document.querySelector( '#wrapper .controls .save' );
-		saveURLBox = document.querySelector('#wrapper .controls .url');
+		sidebar = document.querySelector( '#wrapper .sidebar' );
+		clearButton = document.querySelector( '#wrapper .sidebar .clear' );
+		saveButton = document.querySelector( '#wrapper .sidebar .save' );
 		sequencer = document.querySelector( '#wrapper .sequencer' );
 		sequencerInput = document.querySelector( '#wrapper .sequencer-input' );
 		
@@ -164,7 +163,7 @@ var Radar = (function(){
 			}
 			
 			clearButton.addEventListener('click', onClearButtonClicked, false);
-			SaveButton.addEventListener('click', onSaveButtonClicked, false);
+			saveButton.addEventListener('click', onSaveButtonClicked, false);
 			canvas.addEventListener('mousedown', onDocumentMouseDown, false);
 			document.addEventListener('mousemove', onDocumentMouseMove, false);
 			document.addEventListener('mouseup', onDocumentMouseUp, false);
@@ -172,12 +171,6 @@ var Radar = (function(){
 			canvas.addEventListener('touchmove', onCanvasTouchMove, false);
 			canvas.addEventListener('touchend', onCanvasTouchEnd, false);
 			window.addEventListener('resize', onWindowResize, false);
-
-			keySelector.addEventListener('change', onKeySelectorChanged, false);
-			scaleSelector.addEventListener('change', onScaleSelectorChanged, false);
-
-			keySelector.value = currentKey;
-			scaleSelector.value = currentScale;
 			
 			// Force an initial layout
 			onWindowResize();
@@ -407,10 +400,10 @@ var Radar = (function(){
 		}
 	}
 
-	function addKeyOption(key) {
-		var option = document.createElement('option');
-		option.textContent = key;
-		keySelector.appendChild(option);
+	function addKeyOption( key ) {
+		// var option = document.createElement('option');
+		// option.textContent = key;
+		// keySelector.appendChild(option);
 	}
 
 	function generateScaleFrom(originalScale, delta) {
@@ -435,9 +428,8 @@ var Radar = (function(){
 			}
 		});
 		var url = document.location.protocol + '//' + document.location.host + document.location.pathname + '?' + saveData.join('+');
-		history.pushState(null, null, url);
-		saveURLBox.value = url;
-		saveURLBox.className += ' show';
+		
+		prompt( 'Copy the unique URL and save it or share with friends.', url );
 	}
 	
 	function onDocumentMouseDown( event ) {
@@ -488,8 +480,10 @@ var Radar = (function(){
 	}
 	
 	function onWindowResize() {
+		var containerWidth = world.width + sidebar.offsetWidth + 20;
+
 		// Resize the container
-		container.style.width = world.width + 'px';
+		container.style.width = containerWidth + 'px';
 		container.style.height = world.height + 'px';
 		container.style.left = ( window.innerWidth - world.width ) / 2 + 'px';
 		container.style.top = ( window.innerHeight - world.height ) / 2 + 'px';
@@ -499,27 +493,27 @@ var Radar = (function(){
 		canvas.height = world.height;
 	}
 
-	function onKeySelectorChanged( event ) {
-		// Change the current key
-		var newKey = keySelector.value;
+	// function onKeySelectorChanged( event ) {
+	// 	// Change the current key
+	// 	var newKey = keySelector.value;
 
-		if( notes.hasOwnProperty(newKey) ) {
-			currentKey = newKey;
-		} else {
-			keySelector.value = currentKey;
-		}
-	}
+	// 	if( notes.hasOwnProperty(newKey) ) {
+	// 		currentKey = newKey;
+	// 	} else {
+	// 		keySelector.value = currentKey;
+	// 	}
+	// }
 
-	function onScaleSelectorChanged( event ) {
-		// Change the current scale
-		var newScale = scaleSelector.value;
+	// function onScaleSelectorChanged( event ) {
+	// 	// Change the current scale
+	// 	var newScale = scaleSelector.value;
 
-		if( notes[currentKey].hasOwnProperty(newScale) ) {
-			currentScale = newScale;
-		} else {
-			scaleSelector.value = currentScale;
-		}
-	}
+	// 	if( notes[currentKey].hasOwnProperty(newScale) ) {
+	// 		currentScale = newScale;
+	// 	} else {
+	// 		scaleSelector.value = currentScale;
+	// 	}
+	// }
 
 	/**
 	 * Represets one node/point in the grid.

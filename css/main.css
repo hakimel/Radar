@@ -12,6 +12,12 @@ body, html {
 	background: #111;
 }
 
+* {
+	-webkit-box-sizing: border-box;
+	   -moz-box-sizing: border-box;
+	        box-sizing: border-box;
+}
+
 
 /*********************************************
  * HEADER
@@ -132,68 +138,66 @@ header {
 
 #wrapper {
 	position: absolute;
+	
+	font-size: 12px;
+	color: #f4f4f4;
+	cursor: default;
+}
+
+#wrapper canvas {
+	float: left;
 
 	background: #000;
 	background: url('../images/background.png') no-repeat;
 	border: 1px solid #222;
 	border-radius: 2px;
 	
-	font-size: 12px;
-	color: #f4f4f4;
-	cursor: default;
-
 	box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
 }
 
-#wrapper .controls {
+#wrapper .instructions {
+	display: block;
 	position: absolute;
-	height: 20px;
-	top: -32px;
 	left: 0px;
-	width: 100%;
-	color: #999;
+	top: -22px;
+	opacity: 0;
 
-	font-size: 12px;
+	-webkit-transition: all .12s ease;
+	   -moz-transition: all .12s ease;
+	    -ms-transition: all .12s ease;
+	     -o-transition: all .12s ease;
+	        transition: all .12s ease;
 }
-	#wrapper .controls .instructions {
-		display: block;
-		position: absolute;
-		right: 0;
-		padding: 6px 4px;
-		opacity: 0;
-
-		-webkit-transition: all .12s ease;
-		   -moz-transition: all .12s ease;
-		    -ms-transition: all .12s ease;
-		     -o-transition: all .12s ease;
-		        transition: all .12s ease;
-	}
-		#wrapper.empty .controls .instructions {
-			opacity: 1;
-		}
-
-	#wrapper .controls .options {
-		position: absolute;
-		right: 0px;
+	#wrapper.empty .instructions {
 		opacity: 1;
-
-		-webkit-transition: all .12s ease;
-		   -moz-transition: all .12s ease;
-		    -ms-transition: all .12s ease;
-		     -o-transition: all .12s ease;
-		        transition: all .12s ease;
-	}
-		#wrapper.empty .controls .options {
-			opacity: 0;
-		}
-
-	#wrapper .controls .options button {
-		margin: 0 5px 0 0;
-		font-size: 12px;
 	}
 
-	#wrapper .controls button {
-		padding: 4px 6px;
+#wrapper .sidebar {
+	position: absolute;
+	right: 0;
+	top: 0;
+	width: 100px;
+
+	color: #999;
+	opacity: 1;
+	font-size: 12px;
+
+	-webkit-transition: all .12s ease;
+	   -moz-transition: all .12s ease;
+	    -ms-transition: all .12s ease;
+	     -o-transition: all .12s ease;
+	        transition: all .12s ease;
+}
+	/*#wrapper.empty .sidebar {
+		opacity: 0;
+		visibility: 0;
+	}*/
+
+	#wrapper .sidebar button {
+		display: block;
+		width: 100%;
+		padding: 6px;
+		margin-bottom: 4px;
 
 		color: #999;
 		background: rgba( 255, 255, 255, 0.05 );
@@ -202,7 +206,7 @@ header {
 		border-radius: 2px;
 		cursor: pointer;
 		font-size: 12px;
-		margin-left: 12px;
+		text-align: left;
 
 		-webkit-transition: all .12s ease;
 		   -moz-transition: all .12s ease;
@@ -210,43 +214,34 @@ header {
 		     -o-transition: all .12s ease;
 		        transition: all .12s ease;
 	}
-		#wrapper .controls button:hover {
+		#wrapper .sidebar button:hover {
 			opacity: 1;
 			color: #fff;
 			background: rgba( 255, 255, 255, 0.2 );
 		}
 
-	#wrapper .controls .url {
-		opacity: 0;
-		-webkit-transition: all .12s ease;
-		   -moz-transition: all .12s ease;
-		    -ms-transition: all .12s ease;
-		     -o-transition: all .12s ease;
-		        transition: all .12s ease;
-	}
-	#wrapper .controls .url.show {
-		opacity: 1;
-	}
-
 	/* SEQUENCER */
-	#wrapper .controls .sequencer {
-		position: absolute;
-		left: 0;
-		background: #222;
-		box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
-		border-radius: 2px;
+	#wrapper .sidebar .sequencer {
+		margin-top: 20px;
 	}
-		#wrapper .controls .sequencer li {
-			display: inline-block;
-			padding: 6px;
-			width: 90px;
-			text-align: center;
+		#wrapper .sidebar .sequencer li {
+			display: block;
+			padding: 10px 6px;
+			margin-bottom: 4px;
+			width: 100%;
+
+			background: #222;
+			border: 1px solid rgba( 255, 255, 255, 0.05 );
+
+			box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
+			border-radius: 2px;
 		}
-			#wrapper .controls .sequencer li+li {
-				border-left: 1px solid #333;
+			#wrapper .sidebar .sequencer li.placeholder {
+				background: #004523;
+				color: #fff;
 			}
 
-	#wrapper .controls .sequencer-input {
+	#wrapper .sidebar .sequencer-input {
 		display: none;
 		position: absolute;
 		left: 0;
@@ -255,16 +250,10 @@ header {
 
 		background: #222;
 	}
-		#wrapper .controls .sequencer-input.open {
+		#wrapper .sidebar .sequencer-input.open {
 			display: block;
 		}
 
-		#wrapper .controls .sequencer-input li {
+		#wrapper .sidebar .sequencer-input li {
 			padding: 6px;
 		}
-
-#wrapper canvas {
-	position: absolute;
-	top: 0;
-	left: 0;
-}

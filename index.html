@@ -58,12 +58,15 @@
 		</header>
 
 		<div id="wrapper" class="empty">
-			<div class="controls">
+			<canvas></canvas>
+			<div class="sidebar">
+				<button class="save">Save</button>
+				<button class="clear">Clear</button>
 				<ul class="sequencer">
 					<li>A min</li>
 					<li>E min</li>
 					<li>E min</li>
-					<li>E maj</li>
+					<li class="placeholder">Add Key</li>
 				</ul>
 				<ul class="sequencer-input">
 					<li>A min</li>
@@ -74,21 +77,8 @@
 					<li>E maj</li>
 				</ul>
 
-				<span class="instructions">Start by clicking on a pin</span>
-				<div class="options">
-					<input type="text" class="url">
-					<button class="save">Save</button>
-					<button class="clear">Clear</button>
-					<span class="key-label">Key:</span>
-					<select class="key">
-					</select>
-					<select class="scale">
-						<option>min</option>
-						<option>maj</option>
-					</select>
-				</div>
 			</div>
-			<canvas></canvas>
+			<span class="instructions">Start by clicking on a pin</span>
 		</div>
 		
 		<script src="js/libs/audiolet.dependencies.js"></script>
