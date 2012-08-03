@@ -69,6 +69,10 @@ var Radar = (function(){
 		resetButton,
 
 		currentBeat = null,
+		defaultBeats = [
+			[ 'a', 'min' ],
+			[ 'a', 'min' ]
+		],
 
 		delta = 0,
 		deltaTime = 0,
@@ -122,13 +126,6 @@ var Radar = (function(){
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');
 			context.globalCompositeOperation = 'lighter';
-
-			// Populate the key selector
-			for( var key in notes ) {
-				if( notes.hasOwnProperty(key) ) {
-					addKeyOption(key);
-				}
-			}
 
 			addEventListeners();
 			
@@ -244,8 +241,25 @@ var Radar = (function(){
 			}
 		}
 		else {
-			addBeat( 'a', 'min' );
-			addBeat( 'a', 'min' );
+			for( var i = 0, len = defaultBeats.length; i < len; i++ ) {
+				addBeat( defaultBeats[i][0], defaultBeats[i][1] );
+			}
+		}
+	}
+
+	function reset() {
+		var i;
+
+		for( i = 0, len = nodes.length; i < len; i++ ) {
+			nodes[i].deactivate();
+		}
+
+		while( beats.length ) {
+			beats.pop().destroy();
+		}
+
+		for( var i = 0, len = defaultBeats.length; i < len; i++ ) {
+			addBeat( defaultBeats[i][0], defaultBeats[i][1] );
 		}
 	}
 
@@ -489,12 +503,6 @@ var Radar = (function(){
 		}
 	}
 
-	function addKeyOption( key ) {
-		// var option = document.createElement('option');
-		// option.textContent = key;
-		// keySelector.appendChild(option);
-	}
-
 	function generateScaleFrom(originalScale, delta) {
 		var newScale = [];
 		originalScale.forEach(function (freq) {
@@ -504,9 +512,7 @@ var Radar = (function(){
 	}
 
 	function onResetButtonClicked( event ) {
-		for( var i = 0, len = nodes.length; i < len; i++ ) {
-			nodes[i].deactivate();
-		}
+		reset();
 	}
 
 	function onSaveButtonClicked( event ) {
