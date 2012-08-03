@@ -95,17 +95,23 @@ var Radar = (function(){
 	var notes = {};
 	notes.a = {
 		min: [ 220.0,246.9,261.6,293.7,329.6,349.2,415.3,440.0,493.9,523.3 ],
-		maj: [ 220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4 ]
+		maj: [ 220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4 ],
+		minColor: 'hsl(180, 90%, 50%)',
+		majColor: 'hsl(180, 30%, 50%)'
 	};
 
 	notes.d = {
 		min: generateScaleFrom( notes.a.min, 4/3 ),
-		maj: generateScaleFrom( notes.a.maj, 4/3 )
+		maj: generateScaleFrom( notes.a.maj, 4/3 ),
+		minColor: 'hsl(135, 90%, 50%)',
+		majColor: 'hsl(135, 30%, 50%)'
 	};
 
 	notes.e = {
 		min: generateScaleFrom( notes.a.min, 3/2 ),
-		maj: generateScaleFrom( notes.a.maj, 3/2 )
+		maj: generateScaleFrom( notes.a.maj, 3/2 ),
+		minColor: 'hsl(80, 90%, 50%)',
+		majColor: 'hsl(80, 30%, 50%)'
 	};
 	
 	/**
@@ -149,7 +155,6 @@ var Radar = (function(){
 		saveButton.addEventListener('click', onSaveButtonClicked, false);
 		sequencerAddButton.addEventListener('click', onSequencerAddButtonClick, false);
 
-		document.addEventListener('mousedown', onDocumentMouseDown, false);
 		canvas.addEventListener('mousedown', onCanvasMouseDown, false);
 		document.addEventListener('mousemove', onDocumentMouseMove, false);
 		document.addEventListener('mouseup', onDocumentMouseUp, false);
@@ -259,9 +264,11 @@ var Radar = (function(){
 			beats.pop().destroy();
 		}
 
-		for( var i = 0, len = defaultBeats.length; i < len; i++ ) {
+		for( i = 0, len = defaultBeats.length; i < len; i++ ) {
 			addBeat( defaultBeats[i][0], defaultBeats[i][1] );
 		}
+
+		currentBeat = null;
 	}
 
 	function addBeat() {
@@ -300,6 +307,10 @@ var Radar = (function(){
 		var beat = beats[ index ];
 
 		if( beat ) {
+			if( beat === currentBeat ) {
+				currentBeat = beats[0];
+			}
+
 			beats.splice( beat.index, 1 );
 			beat.destroy();
 		}
@@ -485,6 +496,7 @@ var Radar = (function(){
 		}
 
 		// Render beats
+		context.save();
 		for( var i = 0, len = beats.length; i < len; i++ ) {
 			var beat = beats[i];
 
@@ -492,16 +504,19 @@ var Radar = (function(){
 				context.beginPath();
 				context.arc( beat.x, beat.y, Math.max( (beat.size * beat.strength)-2, 0 ), 0, Math.PI * 2, true );
 				context.lineWidth = 8;
-				context.strokeStyle = 'rgba(90,255,180,'+ ( 0.2 * ( 1 - beat.strength ) ) +')';
+				context.globalAlpha = 0.2 * ( 1 - beat.strength );
+				context.strokeStyle = beat.color;
 				context.stroke();
 
 				context.beginPath();
 				context.arc( beat.x, beat.y, beat.size * beat.strength, 0, Math.PI * 2, true );
 				context.lineWidth = 2;
-				context.strokeStyle = 'rgba(90,255,180,'+ ( 0.8 * ( 1 - beat.strength ) ) +')';
+				context.globalAlpha = 0.8 * ( 1 - beat.strength );
+				context.strokeStyle = beat.color;
 				context.stroke();
 			}
 		}
+		context.restore();
 	}
 
 	function generateScaleFrom(originalScale, delta) {
@@ -575,10 +590,6 @@ var Radar = (function(){
 			}
 		}
 	}
-
-	function onDocumentMouseDown( event ) {
-		sequencerInput.style.visibility = 'hidden';
-	}
 	
 	function onCanvasMouseDown( event ) {
 		mouse.down = true;
@@ -599,6 +610,7 @@ var Radar = (function(){
 	
 	function onDocumentMouseUp( event ) {
 		mouse.down = false;
+		sequencerInput.style.visibility = 'hidden';
 	}
 	
 	function onCanvasTouchStart( event ) {
@@ -750,6 +762,8 @@ var Radar = (function(){
 	Beat.prototype.configure = function( key, scale ) {
 		this.key = key;
 		this.scale = scale;
+
+		this.color = notes[ this.key ][ scale + 'Color' ];
 
 		this.element.innerHTML = '<span class="index">' + ( this.index + 1 ) + '.</span> ' + key.toUpperCase() + ' ' + scale;
 	};
