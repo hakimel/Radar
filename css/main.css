@@ -188,10 +188,10 @@ header {
 	     -o-transition: all .12s ease;
 	        transition: all .12s ease;
 }
-	/*#wrapper.empty .sidebar {
+	#wrapper.empty .sidebar {
 		opacity: 0;
 		visibility: hidden;
-	}*/
+	}
 
 	#wrapper .sidebar button {
 		display: inline-block;
@@ -259,11 +259,11 @@ header {
 				height: 100%;
 				opacity: 0;
 
-				-webkit-transition: opacity 2s linear;
-				   -moz-transition: opacity 2s linear;
-				    -ms-transition: opacity 2s linear;
-				     -o-transition: opacity 2s linear;
-				        transition: opacity 2s linear;
+				-webkit-transition: opacity 1.5s linear;
+				   -moz-transition: opacity 1.5s linear;
+				    -ms-transition: opacity 1.5s linear;
+				     -o-transition: opacity 1.5s linear;
+				        transition: opacity 1.5s linear;
 			}
 				#wrapper .sidebar .sequencer li .background.instant {
 					-webkit-transition: none;

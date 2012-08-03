@@ -68,6 +68,8 @@ var Radar = (function(){
 		saveButton,
 		resetButton,
 
+		query = {},
+
 		currentBeat = null,
 		defaultBeats = [
 			[ 'a', 'min' ],
@@ -96,22 +98,22 @@ var Radar = (function(){
 	notes.a = {
 		min: [ 220.0,246.9,261.6,293.7,329.6,349.2,415.3,440.0,493.9,523.3 ],
 		maj: [ 220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4 ],
-		minColor: 'hsl(180, 80%, 50%)',
-		majColor: 'hsl(160, 80%, 50%)'
+		minColor: 'hsl(180, 90%, 50%)',
+		majColor: 'hsl(160, 90%, 50%)'
 	};
 
 	notes.d = {
 		min: generateScaleFrom( notes.a.min, 4/3 ),
 		maj: generateScaleFrom( notes.a.maj, 4/3 ),
-		minColor: 'hsl(140, 80%, 50%)',
-		majColor: 'hsl(120, 80%, 50%)'
+		minColor: 'hsl(140, 90%, 50%)',
+		majColor: 'hsl(120, 90%, 50%)'
 	};
 
 	notes.e = {
 		min: generateScaleFrom( notes.a.min, 3/2 ),
 		maj: generateScaleFrom( notes.a.maj, 3/2 ),
-		minColor: 'hsl(100, 80%, 50%)',
-		majColor: 'hsl(80, 80%, 50%)'
+		minColor: 'hsl(100, 90%, 50%)',
+		majColor: 'hsl(80, 90%, 50%)'
 	};
 	
 	/**
@@ -132,6 +134,15 @@ var Radar = (function(){
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');
 			context.globalCompositeOperation = 'lighter';
+			
+			// Split the query values into a key/value object 
+			location.search.replace( /[A-Z0-9]+?=([\w|\-|\+]*)/gi, function(a) {
+				query[ a.split( '=' ).shift() ] = a.split( '=' ).pop();
+			} );
+
+			if( query.seed ) {
+				seed = parseInt( query.seed );
+			}
 
 			addEventListeners();
 			
@@ -212,17 +223,6 @@ var Radar = (function(){
 	function load() {
 		// Restore grid from query string
 		if( document.location.search.length > 0 ) {
-			var query = {};
-			
-			// Split the query values into a key/value object 
-			location.search.replace( /[A-Z0-9]+?=([\w|\-|\+]*)/gi, function(a) {
-				query[ a.split( '=' ).shift() ] = a.split( '=' ).pop();
-			} );
-
-			if( query.seed ) {
-				seed = parseInt( query.seed );
-			}
-
 			if( query.beats ) {
 				var beatData = query.beats.split( '+' );
 
@@ -463,7 +463,7 @@ var Radar = (function(){
 				oy = node.offsetY + Math.sin( radians - Math.PI ) * ( 30 * distanceFactor ) * node.strength;
 
 			if( node.strength ) {
-				var radius = 4 + node.size * 20 * node.strength;
+				var radius = 4 + node.size * 16 * node.strength;
 				
 				context.beginPath();
 				context.arc( node.x, node.y, radius, 0, Math.PI * 2, true );
