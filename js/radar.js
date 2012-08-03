@@ -9,7 +9,7 @@ var Radar = (function(){
 
 		BEAT_VELOCITY = 0.01,
 		BEAT_FREQUENCY = 2,
-		BEAT_QUANTITY = 2,
+		BEAT_LIMIT = 10,
 
 		// Distance threshold between active node and beat
 		ACTIVATION_DISTANCE = 20,
@@ -63,6 +63,7 @@ var Radar = (function(){
 		sequencer,
 		sequencerInput,
 		sequencerInputElements,
+		sequencerAddButton,
 
 		resetButton,
 
@@ -123,6 +124,7 @@ var Radar = (function(){
 		sequencer = document.querySelector( '#wrapper .sequencer' );
 		sequencerInput = document.querySelector( '#wrapper .sequencer-input' );
 		sequencerInputElements = sequencerInput.querySelectorAll( 'li' );
+		sequencerAddButton = document.querySelector( '#wrapper .sequencer .add-key' );
 		
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');
@@ -172,7 +174,6 @@ var Radar = (function(){
 			deltaTime = Date.now();
 
 			setup();
-			updateBeats();
 			update();
 		}
 		else {
@@ -184,6 +185,8 @@ var Radar = (function(){
 	function addEventListeners() {
 		resetButton.addEventListener('click', onResetButtonClicked, false);
 		saveButton.addEventListener('click', onSaveButtonClicked, false);
+		sequencerAddButton.addEventListener('click', onSequencerAddButtonClick, false);
+
 		canvas.addEventListener('mousedown', onDocumentMouseDown, false);
 		document.addEventListener('mousemove', onDocumentMouseMove, false);
 		document.addEventListener('mouseup', onDocumentMouseUp, false);
@@ -236,28 +239,59 @@ var Radar = (function(){
 				}
 			}
 		}
+
+		var beatElements = sequencer.querySelectorAll( 'li[data-key]' );
+
+		// Add initial beats
+		for( var i = 0, len = beatElements.length; i < len; i++ ) {
+			if( beats.length <= i ) {
+				addBeat( beatElements[i] );
+			}
+		};
+	}
+
+	function addBeat( element ) {
+		var elementKey = element.getAttribute( 'data-key' ),
+			elementScale = element.getAttribute( 'data-scale' );
+
+		var beat = new Beat( 
+			world.center.x,
+			world.center.y,
+			element,
+			elementKey,
+			elementScale,
+			i
+		);
+
+		beats.push( beat );
+
+		updateBeats();
+
+		return beat;
+	}
+
+	function removeBeat( index ) {
+		var beat = beats[ index ];
+
+		if( beat ) {
+			beats.splice( beat.index, 1 );
+			beat.destroy();
+		}
+
+		updateBeats();
 	}
 
 	function updateBeats() {
-		var beatElements = sequencer.querySelectorAll( 'li[data-key]' );
+		if( beats.length > BEAT_LIMIT - 1 ) {
+			sequencerAddButton.style.visibility = 'hidden';
+		}
+		else {
+			sequencerAddButton.style.visibility = 'visible';
+		}
 
-		for( var i = 0, len = beatElements.length; i < len; i++ ) {
-			var element = beatElements[i];
-
-			var elementKey = element.getAttribute( 'data-key' ),
-				elementScale = element.getAttribute( 'data-scale' );
-
-			if( beats.length <= i ) {
-				beats.push( new Beat( 
-					world.center.x,
-					world.center.y,
-					element,
-					elementKey,
-					elementScale,
-					i
-				) );
-			}
-
+		// Update indices of all beats
+		for( var i = 0, len = beats.length; i < len; i++ ) {
+			beats[i].index = i;
 		};
 	}
 	
@@ -523,6 +557,19 @@ var Radar = (function(){
 		mouse.down = false;
 	}
 
+	function onSequencerAddButtonClick( event ) {
+		if( beats.length < BEAT_LIMIT ) {
+			var element = document.createElement( 'li' );
+			element.setAttribute( 'data-key', 'a' );
+			element.setAttribute( 'data-scale', 'min' );
+			sequencer.insertBefore( element, sequencerAddButton );
+
+			var beat = addBeat( element );
+
+			beat.openSelector();
+		}
+	}
+
 	function onSequencerInputElementClick( event ) {
 		var element = event.target;
 
@@ -698,18 +745,23 @@ var Radar = (function(){
 	Beat.prototype.deactivate = function() {
 		this.active = false;
 	};
-	Beat.prototype.remove = function() {
+	Beat.prototype.destroy = function() {
 		if( this.element && this.element.parentElement ) {
 			this.element.parentElement.removeChild( this.element );
 			this.element = null;
-			beats.splice( this.index, 1 );
 		}
 	};
 	Beat.prototype.openSelector = function() {
-		sequencerInput.style.visibility = 'visible';
-		sequencerInput.style.left = -sequencerInput.offsetWidth - 10 + 'px';
-		sequencerInput.style.top = this.element.offsetTop + ( ( this.element.offsetHeight - sequencerInput.offsetHeight ) / 2 ) + 'px';
-		sequencerInput.setAttribute( 'data-index', this.index );
+		// If the user clicks on the same beat twice, hide the input
+		if( sequencerInput.style.visibility === 'visible' && parseInt( sequencerInput.getAttribute( 'data-index' ) ) === this.index ) {
+			sequencerInput.style.visibility = 'hidden';
+		}
+		else {
+			sequencerInput.style.visibility = 'visible';
+			sequencerInput.style.left = -sequencerInput.offsetWidth - 15 + 'px';
+			sequencerInput.style.top = this.element.offsetTop + ( ( this.element.offsetHeight - sequencerInput.offsetHeight ) / 2 ) + 'px';
+			sequencerInput.setAttribute( 'data-index', this.index );
+		}
 	};
 
 	/**

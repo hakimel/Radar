@@ -243,11 +243,14 @@ header {
 			     -o-transition: all .12s ease;
 			        transition: all .12s ease;
 		}
-			#wrapper .sidebar .sequencer li.placeholder {
+			#wrapper .sidebar .sequencer li:hover {
+				background: #292929;
+			}
+			#wrapper .sidebar .sequencer li.add-key {
 				background: #004523;
 				color: #fff;
 			}
-				#wrapper .sidebar .sequencer li.placeholder:hover {
+				#wrapper .sidebar .sequencer li.add-key:hover {
 					background: #007f42;
 				}
 
@@ -257,17 +260,34 @@ header {
 		width: 100px;
 		left: 0;
 		border-radius: 2px;
-		margin-top: 4px;
 
 		background: #222;
 	}
-		#wrapper .sidebar .sequencer-input.open {
-			display: block;
+		#wrapper .sidebar .sequencer-input:before {
+			content: '\2023';
+			
+			position: absolute;
+			margin: 35% 0 0 100%;
+			left: -4px;
+
+			color: #222;
+			font-size: 50px;
 		}
 
 		#wrapper .sidebar .sequencer-input li {
 			padding: 8px 6px;
+			background: #222;
+			cursor: pointer;
+
+			-webkit-transition: all .12s ease;
+			   -moz-transition: all .12s ease;
+			    -ms-transition: all .12s ease;
+			     -o-transition: all .12s ease;
+			        transition: all .12s ease;
 		}
+			#wrapper .sidebar .sequencer-input li:hover {
+				background: #292929;
+			}
 			#wrapper .sidebar .sequencer-input li+li {
 				border-top: 1px solid #333;
 			}
