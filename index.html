@@ -36,6 +36,7 @@
 					<h3>About</h3>
 					<p>
 						An experiment with real-time audio synthesis.<br> 
+						Works well in Chrome &amp; Safari but runs slowly in Firefox. <br>
 						Thanks to <a href="http://phuu.net">Tom Ashworth</a> for harmonising the sound!
 					</p>
 					<p class="credits">
@@ -71,20 +72,19 @@
 			<div class="sidebar">
 				<button class="save">Save</button>
 				<button class="reset">Reset</button>
+				<ul class="sequencer-input">
+					<li data-key="a" data-scale="min">A minor</li>
+					<li data-key="a" data-scale="maj">A major</li>
+					<li data-key="d" data-scale="min">D minor</li>
+					<li data-key="d" data-scale="maj">D major</li>
+					<li data-key="e" data-scale="min">E minor</li>
+					<li data-key="e" data-scale="maj">E major</li>
+				</ul>
 				<ul class="sequencer">
 					<li class="add-key">Add Key</li>
 				</ul>
-				<ul class="sequencer-input">
-					<li data-key="a" data-scale="min">A min</li>
-					<li data-key="a" data-scale="maj">A maj</li>
-					<li data-key="d" data-scale="min">D min</li>
-					<li data-key="d" data-scale="maj">D maj</li>
-					<li data-key="e" data-scale="min">E min</li>
-					<li data-key="e" data-scale="maj">E maj</li>
-				</ul>
-
 			</div>
-			<span class="instructions">Start by clicking on a pin</span>
+			<span class="instructions">Click on a pin to generate sound</span>
 		</div>
 		
 		<script src="js/libs/audiolet.dependencies.js"></script>

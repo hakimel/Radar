@@ -76,8 +76,6 @@ var Radar = (function(){
 			[ 'a', 'min' ]
 		],
 
-		delta = 0,
-		deltaTime = 0,
 		activateNodeDistance = 0,
 
 		// Seed is used to generate the note field so that random
@@ -148,8 +146,6 @@ var Radar = (function(){
 			
 			// Force an initial layout
 			onWindowResize();
-			
-			deltaTime = Date.now();
 
 			setup();
 			load();
@@ -311,7 +307,7 @@ var Radar = (function(){
 
 		if( beat ) {
 			if( beat === currentBeat ) {
-				currentBeat = beats[0];
+				currentBeat = null;
 			}
 
 			beats.splice( beat.index, 1 );
@@ -331,15 +327,11 @@ var Radar = (function(){
 
 		// Update indices of all beats
 		for( var i = 0, len = beats.length; i < len; i++ ) {
-			beats[i].index = i;
+			beats[i].changeIndex( i );
 		};
 	}
 	
 	function update() {
-		delta = 1 + ( 1 - Math.min( ( Date.now() - deltaTime ) / ( 1000 / 60 ), 1 ) );
-		
-		deltaTime = Date.now();
-
 		clear();
 		step();
 		render();
@@ -379,7 +371,7 @@ var Radar = (function(){
 		for( i = 0; i < nodes.length; i++ ) {
 			var node = nodes[i];
 
-			node.strength = Math.max( node.strength - ( 0.01 * delta ), 0 );
+			node.strength = Math.max( node.strength - 0.01, 0 );
 			node.size += ( node.sizeTarget - node.size ) * 0.25;
 
 			node.offsetTargetX *= 0.6;
@@ -438,15 +430,17 @@ var Radar = (function(){
 			}
 		}
 
-		var nextBeat = currentBeat ? beats[ ( currentBeat.index + 1 ) % beats.length ] : null;
+		if( beats.length ) {
+			var nextBeat = currentBeat ? beats[ ( currentBeat.index + 1 ) % beats.length ] : null;
 
-		if( !currentBeat ) {
-			currentBeat = beats[0];
-			currentBeat.activate();
-		}
-		else if( !nextBeat.active && activeBeats < BEAT_FREQUENCY && currentBeat.strength > 1 / BEAT_FREQUENCY ) {
-			currentBeat = nextBeat;
-			currentBeat.activate();
+			if( !currentBeat ) {
+				currentBeat = beats[0];
+				currentBeat.activate();
+			}
+			else if( !nextBeat.active && activeBeats < BEAT_FREQUENCY && currentBeat.strength > 1 / BEAT_FREQUENCY ) {
+				currentBeat = nextBeat;
+				currentBeat.activate();
+			}
 		}
 	}
 	
@@ -569,7 +563,14 @@ var Radar = (function(){
 	}
 
 	function onSequencerAddButtonClick( event ) {
-		addBeat( 'a', 'min' ).openSelector();
+		var lastBeat = beats[ beats.length - 1 ];
+
+		if( lastBeat ) {
+			addBeat( lastBeat.key, lastBeat.scale ).openSelector();
+		}
+		else {
+			addBeat( 'a', 'min' ).openSelector();
+		}
 	}
 
 	function onSequencerInputElementClick( event ) {
@@ -588,7 +589,7 @@ var Radar = (function(){
 				var beat = beats[ index ];
 
 				if( beat ) {
-					beat.configure( key, scale );
+					beat.generate( key, scale );
 				}
 			}
 		}
@@ -750,19 +751,25 @@ var Radar = (function(){
 		this.constructor.apply( this, arguments );
 		
 		this.element = element;
-		this.index = index;
-
-		this.configure( key, scale );
+		
+		this.changeIndex( index );
+		this.generate( key, scale );
 
 		this.level = ++id;
 		this.size = Math.max( world.width, world.height ) * 0.65;
 		this.active = false;
 		this.strength = 0;
 
-		this.element.addEventListener( 'click', this.openSelector.bind( this ), false );
+		this.openSelector = this.openSelector.bind( this );
+
+		this.element.addEventListener( 'click', this.openSelector, false );
 	};
 	Beat.prototype = new Point();
-	Beat.prototype.configure = function( key, scale ) {
+	Beat.prototype.changeIndex = function( index ) {
+		this.index = index;
+		this.element.setAttribute( 'data-index', this.index );
+	};
+	Beat.prototype.generate = function( key, scale ) {
 		this.key = key;
 		this.scale = scale;
 
@@ -775,7 +782,19 @@ var Radar = (function(){
 		this.backgroundElement.style.backgroundColor = this.color;
 		this.element.appendChild( this.backgroundElement );
 
-		this.element.innerHTML += key.toUpperCase() + ' ' + scale;
+		this.element.setAttribute( 'data-key', this.key );
+		this.element.setAttribute( 'data-scale', this.scale );
+		this.element.innerHTML += key.toUpperCase() + ' ' + scale + 'or';
+
+		this.deleteElement = document.createElement( 'span' );
+		this.deleteElement.innerHTML = '&times;';
+		this.deleteElement.className = 'delete';
+		this.element.appendChild( this.deleteElement );
+
+		this.deleteElement.addEventListener( 'click', function() {
+			removeBeat( this.index );
+			return false;
+		}.bind( this ), false );
 	};
 	Beat.prototype.activate = function() {
 		this.level = ++id;
@@ -798,11 +817,12 @@ var Radar = (function(){
 	};
 	Beat.prototype.destroy = function() {
 		if( this.element && this.element.parentElement ) {
+			this.element.removeEventListener( 'click', this.openSelector, false );
 			this.element.parentElement.removeChild( this.element );
 			this.element = null;
 		}
 	};
-	Beat.prototype.openSelector = function() {
+	Beat.prototype.openSelector = function( event ) {
 		// If the user clicks on the same beat twice, hide the input
 		if( sequencerInput.style.visibility === 'visible' && parseInt( sequencerInput.getAttribute( 'data-index' ) ) === this.index ) {
 			sequencerInput.style.visibility = 'hidden';

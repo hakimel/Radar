@@ -250,6 +250,20 @@ header {
 			#wrapper .sidebar .sequencer li .index {
 				opacity: 0.5;
 			}
+			#wrapper .sidebar .sequencer li .delete {
+				position: absolute;
+				right: 7px;
+				top: 3px;
+				font-family: Helvetica;
+				font-size: 20px;
+				opacity: 0.1;
+			}
+				#wrapper .sidebar .sequencer li:hover .delete {
+					opacity: 0.6;
+				}
+					#wrapper .sidebar .sequencer li .delete:hover {
+						opacity: 1;
+					}
 			#wrapper .sidebar .sequencer li .background {
 				position: absolute;
 				top: 0;
@@ -293,7 +307,7 @@ header {
 			content: '\2023';
 			
 			position: absolute;
-			margin: 36% 0 0 100%;
+			margin: 76px 0 0 100%;
 			left: -4px;
 
 			color: #222;
