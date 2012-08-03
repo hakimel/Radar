@@ -26,7 +26,7 @@ body, html {
 header {
 	position: relative;
 	width: 100%;
-	height: 27px;
+	height: 36px;
 	margin: 0;
 	padding: 0 8px 8px 8px;
 	overflow: hidden;
@@ -266,7 +266,7 @@ header {
 		}
 
 		#wrapper .sidebar .sequencer-input li {
-			padding: 6px;
+			padding: 8px 6px;
 		}
 			#wrapper .sidebar .sequencer-input li+li {
 				border-top: 1px solid #333;

@@ -62,6 +62,7 @@ var Radar = (function(){
 		sidebar,
 		sequencer,
 		sequencerInput,
+		sequencerInputElements,
 
 		resetButton,
 
@@ -121,6 +122,7 @@ var Radar = (function(){
 		saveButton = document.querySelector( '#wrapper .sidebar .save' );
 		sequencer = document.querySelector( '#wrapper .sequencer' );
 		sequencerInput = document.querySelector( '#wrapper .sequencer-input' );
+		sequencerInputElements = sequencerInput.querySelectorAll( 'li' );
 		
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');
@@ -162,15 +164,7 @@ var Radar = (function(){
 				}
 			}
 			
-			resetButton.addEventListener('click', onResetButtonClicked, false);
-			saveButton.addEventListener('click', onSaveButtonClicked, false);
-			canvas.addEventListener('mousedown', onDocumentMouseDown, false);
-			document.addEventListener('mousemove', onDocumentMouseMove, false);
-			document.addEventListener('mouseup', onDocumentMouseUp, false);
-			canvas.addEventListener('touchstart', onCanvasTouchStart, false);
-			canvas.addEventListener('touchmove', onCanvasTouchMove, false);
-			canvas.addEventListener('touchend', onCanvasTouchEnd, false);
-			window.addEventListener('resize', onWindowResize, false);
+			addEventListeners();
 			
 			// Force an initial layout
 			onWindowResize();
@@ -185,6 +179,22 @@ var Radar = (function(){
 			alert( 'Doesn\'t seem like your browser supports the HTML5 canvas element :(' );
 		}
 
+	}
+
+	function addEventListeners() {
+		resetButton.addEventListener('click', onResetButtonClicked, false);
+		saveButton.addEventListener('click', onSaveButtonClicked, false);
+		canvas.addEventListener('mousedown', onDocumentMouseDown, false);
+		document.addEventListener('mousemove', onDocumentMouseMove, false);
+		document.addEventListener('mouseup', onDocumentMouseUp, false);
+		canvas.addEventListener('touchstart', onCanvasTouchStart, false);
+		canvas.addEventListener('touchmove', onCanvasTouchMove, false);
+		canvas.addEventListener('touchend', onCanvasTouchEnd, false);
+		window.addEventListener('resize', onWindowResize, false);
+
+		for( var i = 0, len = sequencerInputElements.length; i < len; i++ ) {
+			sequencerInputElements[i].addEventListener( 'click', onSequencerInputElementClick, false );
+		}
 	}
 
 	function setup() {
@@ -241,6 +251,7 @@ var Radar = (function(){
 				beats.push( new Beat( 
 					world.center.x,
 					world.center.y,
+					element,
 					elementKey,
 					elementScale,
 					i
@@ -511,6 +522,26 @@ var Radar = (function(){
 	function onCanvasTouchEnd( event ) {
 		mouse.down = false;
 	}
+
+	function onSequencerInputElementClick( event ) {
+		var element = event.target;
+
+		if( element ) {
+			var index = parseInt( sequencerInput.getAttribute( 'data-index' ) ),
+				key = element.getAttribute( 'data-key' ),
+				scale = element.getAttribute( 'data-scale' );
+
+			if( !isNaN( index ) && key && scale ) {
+				var beat = beats[ index ];
+
+				if( beat ) {
+					beat.configure( key, scale );
+				}
+			}
+		}
+
+		sequencerInput.style.visibility = 'hidden';
+	}
 	
 	function onWindowResize() {
 		var containerWidth = world.width + sidebar.offsetWidth + 20;
@@ -637,28 +668,49 @@ var Radar = (function(){
 	/**
 	 * Represents a beatwave that triggers nodes.
 	 */
-	function Beat( x, y, key, scale, index ) {
+	function Beat( x, y, element, key, scale, index ) {
 		// invoke super
 		this.constructor.apply( this, arguments );
 		
-		this.key = key;
-		this.scale = scale;
+		this.element = element;
 		this.index = index;
+
+		this.configure( key, scale );
 
 		this.level = ++id;
 		this.size = Math.max( world.width, world.height ) * 0.65;
 		this.active = false;
 		this.strength = 0;
-	}
+
+		this.element.addEventListener( 'click', this.openSelector.bind( this ), false );
+	};
 	Beat.prototype = new Point();
+	Beat.prototype.configure = function( key, scale ) {
+		this.key = key;
+		this.scale = scale;
+		this.element.innerHTML = key.toUpperCase() + ' ' + scale;
+	};
 	Beat.prototype.activate = function() {
 		this.level = ++id;
 		this.active = true;
 		this.strength = 0;
-	}
+	};
 	Beat.prototype.deactivate = function() {
 		this.active = false;
-	}
+	};
+	Beat.prototype.remove = function() {
+		if( this.element && this.element.parentElement ) {
+			this.element.parentElement.removeChild( this.element );
+			this.element = null;
+			beats.splice( this.index, 1 );
+		}
+	};
+	Beat.prototype.openSelector = function() {
+		sequencerInput.style.visibility = 'visible';
+		sequencerInput.style.left = -sequencerInput.offsetWidth - 10 + 'px';
+		sequencerInput.style.top = this.element.offsetTop + ( ( this.element.offsetHeight - sequencerInput.offsetHeight ) / 2 ) + 'px';
+		sequencerInput.setAttribute( 'data-index', this.index );
+	};
 
 	/**
 	 * Plays a short sound effect based on arguments.
