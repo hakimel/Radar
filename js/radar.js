@@ -196,13 +196,7 @@ var Radar = (function(){
 		// Generate nodes
 		for( y = 0; y < NODES_Y; y++ ) {
 			for( x = 0; x < NODES_X; x++ ) {
-				length = nodes.push( new Node( cx + x * cx, cy + y * cy, x, y ) );
-				nodeNum = y * NODES_X + x;
-
-				if( savedNodes.indexOf(nodeNum) !== -1 ) {
-					nodes[length - 1].activate();
-					container.className = container.className.replace( 'empty', '' );
-				}
+				nodes.push( new Node( cx + x * cx, cy + y * cy, x, y ) );
 			}
 		}
 
@@ -223,6 +217,8 @@ var Radar = (function(){
 	function load() {
 		// Restore grid from query string
 		if( document.location.search.length > 0 ) {
+			var isRunning = false;
+
 			if( query.beats ) {
 				var beatData = query.beats.split( '+' );
 
@@ -231,6 +227,8 @@ var Radar = (function(){
 						scale = beatData[i].split( '-' )[1];
 
 					addBeat( key, scale );
+
+					isRunning = true;
 				}
 			}
 
@@ -242,8 +240,13 @@ var Radar = (function(){
 
 					if( nodes[ index ] ) {
 						nodes[ index ].activate();
+						isRunning = true;
 					}
 				}
+			}
+
+			if( isRunning ) {
+				container.className = container.className.replace( 'empty', '' );
 			}
 		}
 		else {
@@ -783,7 +786,7 @@ var Radar = (function(){
 		var background = this.element.querySelector( '.background' );
 
 		background.className = 'background instant';
-		background.style.opacity = 0.25;
+		background.style.opacity = 0.4;
 
 		setTimeout( function() {
 			background.className = 'background';
