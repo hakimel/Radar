@@ -535,6 +535,10 @@ var Radar = (function(){
 		}
 
 		var url = document.location.protocol + '//' + document.location.host + document.location.pathname + '?' + query;
+
+		if( 'history' in window && 'pushState' in window.history ) {
+			window.history.pushState( null, null, url );
+		}
 		
 		prompt( 'Copy the unique URL and save it or share with friends.', url );
 	}
