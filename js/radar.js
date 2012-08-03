@@ -149,7 +149,8 @@ var Radar = (function(){
 		saveButton.addEventListener('click', onSaveButtonClicked, false);
 		sequencerAddButton.addEventListener('click', onSequencerAddButtonClick, false);
 
-		canvas.addEventListener('mousedown', onDocumentMouseDown, false);
+		document.addEventListener('mousedown', onDocumentMouseDown, false);
+		canvas.addEventListener('mousedown', onCanvasMouseDown, false);
 		document.addEventListener('mousemove', onDocumentMouseMove, false);
 		document.addEventListener('mouseup', onDocumentMouseUp, false);
 		canvas.addEventListener('touchstart', onCanvasTouchStart, false);
@@ -548,8 +549,38 @@ var Radar = (function(){
 		
 		prompt( 'Copy the unique URL and save it or share with friends.', url );
 	}
-	
+
+	function onSequencerAddButtonClick( event ) {
+		addBeat( 'a', 'min' ).openSelector();
+	}
+
+	function onSequencerInputElementClick( event ) {
+		sequencerInput.style.visibility = 'hidden';
+
+		var element = event.target;
+
+		if( element ) {
+			event.preventDefault();
+
+			var index = parseInt( sequencerInput.getAttribute( 'data-index' ) ),
+				key = element.getAttribute( 'data-key' ),
+				scale = element.getAttribute( 'data-scale' );
+
+			if( !isNaN( index ) && key && scale ) {
+				var beat = beats[ index ];
+
+				if( beat ) {
+					beat.configure( key, scale );
+				}
+			}
+		}
+	}
+
 	function onDocumentMouseDown( event ) {
+		sequencerInput.style.visibility = 'hidden';
+	}
+	
+	function onCanvasMouseDown( event ) {
 		mouse.down = true;
 		mouse.action = null;
 		mouse.exclude.length = 0;
@@ -594,30 +625,6 @@ var Radar = (function(){
 	
 	function onCanvasTouchEnd( event ) {
 		mouse.down = false;
-	}
-
-	function onSequencerAddButtonClick( event ) {
-		addBeat( 'a', 'min' ).openSelector();
-	}
-
-	function onSequencerInputElementClick( event ) {
-		var element = event.target;
-
-		if( element ) {
-			var index = parseInt( sequencerInput.getAttribute( 'data-index' ) ),
-				key = element.getAttribute( 'data-key' ),
-				scale = element.getAttribute( 'data-scale' );
-
-			if( !isNaN( index ) && key && scale ) {
-				var beat = beats[ index ];
-
-				if( beat ) {
-					beat.configure( key, scale );
-				}
-			}
-		}
-
-		sequencerInput.style.visibility = 'hidden';
 	}
 	
 	function onWindowResize() {
@@ -678,8 +685,8 @@ var Radar = (function(){
 		var factorY = 1 - ( this.y / world.height ),
 			factorD = this.distanceTo( world.center.x, world.center.y );
 
-		this.attack = 0.02;
-		this.release = 0.8;
+		this.attack = 0.01;
+		this.release = 0.6;
 	};
 	Node.prototype.distanceToNode = function( node ) {
 		var dx = node.indexh - this.indexh;

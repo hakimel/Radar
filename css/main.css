@@ -199,7 +199,7 @@ header {
 		padding: 6px;
 		margin-bottom: 14px;
 
-		color: #999;
+		color: #bbb;
 		background: rgba( 255, 255, 255, 0.05 );
 		opacity: 1;
 		border: none;
@@ -245,7 +245,7 @@ header {
 			        transition: all .12s ease;
 		}
 			#wrapper .sidebar .sequencer li:hover {
-				background: #292929;
+				background: #333;
 			}
 			#wrapper .sidebar .sequencer li .index {
 				opacity: 0.5;
@@ -290,7 +290,7 @@ header {
 			        transition: all .12s ease;
 		}
 			#wrapper .sidebar .sequencer-input li:hover {
-				background: #292929;
+				background: #333;
 			}
 			#wrapper .sidebar .sequencer-input li+li {
 				border-top: 1px solid #333;
