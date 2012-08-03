@@ -96,22 +96,22 @@ var Radar = (function(){
 	notes.a = {
 		min: [ 220.0,246.9,261.6,293.7,329.6,349.2,415.3,440.0,493.9,523.3 ],
 		maj: [ 220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4 ],
-		minColor: 'hsl(180, 90%, 50%)',
-		majColor: 'hsl(180, 30%, 50%)'
+		minColor: 'hsl(180, 80%, 50%)',
+		majColor: 'hsl(160, 80%, 50%)'
 	};
 
 	notes.d = {
 		min: generateScaleFrom( notes.a.min, 4/3 ),
 		maj: generateScaleFrom( notes.a.maj, 4/3 ),
-		minColor: 'hsl(135, 90%, 50%)',
-		majColor: 'hsl(135, 30%, 50%)'
+		minColor: 'hsl(140, 80%, 50%)',
+		majColor: 'hsl(120, 80%, 50%)'
 	};
 
 	notes.e = {
 		min: generateScaleFrom( notes.a.min, 3/2 ),
 		maj: generateScaleFrom( notes.a.maj, 3/2 ),
-		minColor: 'hsl(80, 90%, 50%)',
-		majColor: 'hsl(80, 30%, 50%)'
+		minColor: 'hsl(100, 80%, 50%)',
+		majColor: 'hsl(80, 80%, 50%)'
 	};
 	
 	/**
@@ -765,12 +765,28 @@ var Radar = (function(){
 
 		this.color = notes[ this.key ][ scale + 'Color' ];
 
-		this.element.innerHTML = '<span class="index">' + ( this.index + 1 ) + '.</span> ' + key.toUpperCase() + ' ' + scale;
+		this.backgroundElement = document.createElement( 'div' );
+		this.backgroundElement.className = 'background';
+		this.backgroundElement.style.backgroundColor = this.color;
+		this.element.appendChild( this.backgroundElement );
+
+		this.element.innerHTML += '<span class="index">' + ( this.index + 1 ) + '.</span> ' + key.toUpperCase() + ' ' + scale;
 	};
 	Beat.prototype.activate = function() {
 		this.level = ++id;
 		this.active = true;
 		this.strength = 0;
+
+		// For some reason this.backgroundElement isn't reacting
+		var background = this.element.querySelector( '.background' );
+
+		background.className = 'background instant';
+		background.style.opacity = 0.25;
+
+		setTimeout( function() {
+			background.className = 'background';
+			background.style.opacity = 0;
+		}, 1 );
 	};
 	Beat.prototype.deactivate = function() {
 		this.active = false;
