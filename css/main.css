@@ -194,10 +194,10 @@ header {
 	}*/
 
 	#wrapper .sidebar button {
-		display: block;
-		width: 100%;
+		display: inline-block;
+		width: 48%;
 		padding: 6px;
-		margin-bottom: 4px;
+		margin-bottom: 14px;
 
 		color: #999;
 		background: rgba( 255, 255, 255, 0.05 );
@@ -206,7 +206,7 @@ header {
 		border-radius: 2px;
 		cursor: pointer;
 		font-size: 12px;
-		text-align: left;
+		text-align: center;
 
 		-webkit-transition: all .12s ease;
 		   -moz-transition: all .12s ease;
@@ -222,7 +222,8 @@ header {
 
 	/* SEQUENCER */
 	#wrapper .sidebar .sequencer {
-		margin-top: 20px;
+		padding-top: 14px;
+		border-top: 1px dotted rgba( 255, 255, 255, 0.08 );
 	}
 		#wrapper .sidebar .sequencer li {
 			display: block;
@@ -246,6 +247,9 @@ header {
 			#wrapper .sidebar .sequencer li:hover {
 				background: #292929;
 			}
+			#wrapper .sidebar .sequencer li .index {
+				opacity: 0.5;
+			}
 			#wrapper .sidebar .sequencer li.add-key {
 				background: #004523;
 				color: #fff;
@@ -267,7 +271,7 @@ header {
 			content: '\2023';
 			
 			position: absolute;
-			margin: 35% 0 0 100%;
+			margin: 36% 0 0 100%;
 			left: -4px;
 
 			color: #222;
@@ -275,7 +279,7 @@ header {
 		}
 
 		#wrapper .sidebar .sequencer-input li {
-			padding: 8px 6px;
+			padding: 10px 6px;
 			background: #222;
 			cursor: pointer;
 

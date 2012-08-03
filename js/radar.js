@@ -65,7 +65,10 @@ var Radar = (function(){
 		sequencerInputElements,
 		sequencerAddButton,
 
+		saveButton,
 		resetButton,
+
+		currentBeat = null,
 
 		delta = 0,
 		deltaTime = 0,
@@ -87,29 +90,19 @@ var Radar = (function(){
 	// Delta ratios are musical harmonies, like http://modularscale.com/
 	var notes = {};
 	notes.a = {
-		min: [
-			220.0,246.9,261.6,293.7,329.6,349.2,415.3,440.0,493.9,523.3
-		],
-		maj: [
-			220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4
-		]
+		min: [ 220.0,246.9,261.6,293.7,329.6,349.2,415.3,440.0,493.9,523.3 ],
+		maj: [ 220.0,246.9,277.2,293.7,329.6,370.0,415.3,440.0,493.9,554.4 ]
 	};
 
-	var keys = [
-		{ name: 'd', delta: 4/3 },
-		{ name: 'e', delta: 3/2 }
-	];
+	notes.d = {
+		min: generateScaleFrom( notes.a.min, 4/3 ),
+		maj: generateScaleFrom( notes.a.maj, 4/3 )
+	};
 
-	keys.forEach(function (key) {
-		notes[key.name] = {
-			min: generateScaleFrom(notes.a.min, key.delta),
-			maj: generateScaleFrom(notes.a.maj, key.delta)
-		};
-	});
-
-	var currentKey = 'a', 
-		currentScale = 'maj',
-		currentBeat = null;
+	notes.e = {
+		min: generateScaleFrom( notes.a.min, 3/2 ),
+		maj: generateScaleFrom( notes.a.maj, 3/2 )
+	};
 	
 	/**
 	 * 
@@ -136,6 +129,8 @@ var Radar = (function(){
 					addKeyOption(key);
 				}
 			}
+
+			/*
 
 			// Restore grid from query string
 			if( document.location.search.length > 0 ) {
@@ -165,6 +160,8 @@ var Radar = (function(){
 					return;
 				}
 			}
+
+			*/
 			
 			addEventListeners();
 			
@@ -260,7 +257,7 @@ var Radar = (function(){
 			element,
 			elementKey,
 			elementScale,
-			i
+			beats.length
 		);
 
 		beats.push( beat );
@@ -499,12 +496,18 @@ var Radar = (function(){
 	}
 
 	function onSaveButtonClicked( event ) {
-		var saveData = [seed, currentKey, currentScale];
+		var saveData = [
+			seed, 
+			currentKey, 
+			currentScale
+		];
+
 		nodes.forEach(function (node, index) {
 			if( node.active ) {
 				saveData.push(index);
 			}
 		});
+
 		var url = document.location.protocol + '//' + document.location.host + document.location.pathname + '?' + saveData.join('+');
 		
 		prompt( 'Copy the unique URL and save it or share with friends.', url );
@@ -603,28 +606,6 @@ var Radar = (function(){
 		canvas.width = world.width;
 		canvas.height = world.height;
 	}
-
-	// function onKeySelectorChanged( event ) {
-	// 	// Change the current key
-	// 	var newKey = keySelector.value;
-
-	// 	if( notes.hasOwnProperty(newKey) ) {
-	// 		currentKey = newKey;
-	// 	} else {
-	// 		keySelector.value = currentKey;
-	// 	}
-	// }
-
-	// function onScaleSelectorChanged( event ) {
-	// 	// Change the current scale
-	// 	var newScale = scaleSelector.value;
-
-	// 	if( notes[currentKey].hasOwnProperty(newScale) ) {
-	// 		currentScale = newScale;
-	// 	} else {
-	// 		scaleSelector.value = currentScale;
-	// 	}
-	// }
 
 	/**
 	 * Represets one node/point in the grid.
@@ -735,7 +716,8 @@ var Radar = (function(){
 	Beat.prototype.configure = function( key, scale ) {
 		this.key = key;
 		this.scale = scale;
-		this.element.innerHTML = key.toUpperCase() + ' ' + scale;
+
+		this.element.innerHTML = '<span class="index">' + ( this.index + 1 ) + '.</span> ' + key.toUpperCase() + ' ' + scale;
 	};
 	Beat.prototype.activate = function() {
 		this.level = ++id;
