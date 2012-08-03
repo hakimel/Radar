@@ -130,39 +130,6 @@ var Radar = (function(){
 				}
 			}
 
-			/*
-
-			// Restore grid from query string
-			if( document.location.search.length > 0 ) {
-				var queryString = document.location.search.slice(1),
-						query = queryString.split('+');
-
-				if( query.length < 3 ) { return; }
-
-				try {
-					// Seed should be zeroth parameter
-					seed = parseInt(query[0], 10);
-					// First and second are key and scale
-					if( notes.hasOwnProperty(query[1]) ){
-						currentKey = query[1];
-					}
-					if( notes[currentKey].hasOwnProperty(query[2]) ){
-						currentScale = query[2];
-					}
-					// Grab the rest of the query to activate the nodes
-					var strNodes = query.slice(3);
-					strNodes.forEach(function (nodeNum) {
-						try {
-							savedNodes.push(parseInt(nodeNum, 10));
-						} catch(e) {}
-					});
-				} catch (e) {
-					return;
-				}
-			}
-
-			*/
-			
 			addEventListeners();
 			
 			// Force an initial layout
@@ -171,6 +138,7 @@ var Radar = (function(){
 			deltaTime = Date.now();
 
 			setup();
+			load();
 			update();
 		}
 		else {
@@ -236,18 +204,64 @@ var Radar = (function(){
 				}
 			}
 		}
-
-		var beatElements = sequencer.querySelectorAll( 'li[data-key]' );
-
-		// Add initial beats
-		for( var i = 0, len = beatElements.length; i < len; i++ ) {
-			if( beats.length <= i ) {
-				addBeat( beatElements[i] );
-			}
-		};
 	}
 
-	function addBeat( element ) {
+	function load() {
+		// Restore grid from query string
+		if( document.location.search.length > 0 ) {
+			var query = {};
+			
+			// Split the query values into a key/value object 
+			location.search.replace( /[A-Z0-9]+?=([\w|\-|\+]*)/gi, function(a) {
+				query[ a.split( '=' ).shift() ] = a.split( '=' ).pop();
+			} );
+
+			if( query.seed ) {
+				seed = parseInt( query.seed );
+			}
+
+			if( query.beats ) {
+				var beatData = query.beats.split( '+' );
+
+				for( var i = 0, len = beatData.length; i < len; i++ ) {
+					var key = beatData[i].split( '-' )[0],
+						scale = beatData[i].split( '-' )[1];
+
+					addBeat( key, scale );
+				}
+			}
+
+			if( query.nodes ) {
+				var nodeData = query.nodes.split( '+' );
+
+				for( var i = 0, len = nodeData.length; i < len; i++ ) {
+					var index = parseInt( nodeData[i], 10 );
+
+					if( nodes[ index ] ) {
+						nodes[ index ].activate();
+					}
+				}
+			}
+		}
+		else {
+			addBeat( 'a', 'min' );
+			addBeat( 'a', 'min' );
+		}
+	}
+
+	function addBeat() {
+		var element;
+
+		if( arguments.length === 2 ) {
+			element = document.createElement( 'li' );
+			element.setAttribute( 'data-key', arguments[0] );
+			element.setAttribute( 'data-scale', arguments[1] );
+			sequencer.insertBefore( element, sequencerAddButton );
+		}
+		else {
+			element = arguments[0];
+		}
+
 		var elementKey = element.getAttribute( 'data-key' ),
 			elementScale = element.getAttribute( 'data-scale' );
 
@@ -496,19 +510,31 @@ var Radar = (function(){
 	}
 
 	function onSaveButtonClicked( event ) {
-		var saveData = [
-			seed, 
-			currentKey, 
-			currentScale
-		];
+		var data = {
+			seed: seed,
+			beats: [],
+			nodes: []
+		};
 
-		nodes.forEach(function (node, index) {
+		nodes.forEach(function ( node, index ) {
 			if( node.active ) {
-				saveData.push(index);
+				data.nodes.push( index );
 			}
 		});
 
-		var url = document.location.protocol + '//' + document.location.host + document.location.pathname + '?' + saveData.join('+');
+		beats.forEach(function ( beat, index ) {
+			data.beats.push( beat.key + '-' + beat.scale );
+		});
+
+		var query = '',
+			value;
+
+		for( var i in data ) {
+			value = data[i] instanceof Array ? data[i].join( '+' ) : data[i];
+			query += ( query.length > 0 ? '&' : '' ) + ( i + '=' + value );
+		}
+
+		var url = document.location.protocol + '//' + document.location.host + document.location.pathname + '?' + query;
 		
 		prompt( 'Copy the unique URL and save it or share with friends.', url );
 	}
@@ -561,16 +587,7 @@ var Radar = (function(){
 	}
 
 	function onSequencerAddButtonClick( event ) {
-		if( beats.length < BEAT_LIMIT ) {
-			var element = document.createElement( 'li' );
-			element.setAttribute( 'data-key', 'a' );
-			element.setAttribute( 'data-scale', 'min' );
-			sequencer.insertBefore( element, sequencerAddButton );
-
-			var beat = addBeat( element );
-
-			beat.openSelector();
-		}
+		addBeat( 'a', 'min' ).openSelector();
 	}
 
 	function onSequencerInputElementClick( event ) {
@@ -632,7 +649,7 @@ var Radar = (function(){
 		// produces something reproducable with the same seed, although there's still
 		// a degree of linearity becuase of the modulus: notes rise from right to left
 		// with a repeating patter top to bottom.
-		this.note = seed * (indexv * NODES_X + indexh) % notes.a[currentScale].length;
+		this.note = seed * (indexv * NODES_X + indexh) % notes.a[ 'maj' ].length;
 
 		this.offsetX = 0;
 		this.offsetY = 0;
