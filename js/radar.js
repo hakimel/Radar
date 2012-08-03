@@ -765,12 +765,14 @@ var Radar = (function(){
 
 		this.color = notes[ this.key ][ scale + 'Color' ];
 
+		this.element.innerHTML = '';
+
 		this.backgroundElement = document.createElement( 'div' );
 		this.backgroundElement.className = 'background';
 		this.backgroundElement.style.backgroundColor = this.color;
 		this.element.appendChild( this.backgroundElement );
 
-		this.element.innerHTML += '<span class="index">' + ( this.index + 1 ) + '.</span> ' + key.toUpperCase() + ' ' + scale;
+		this.element.innerHTML += key.toUpperCase() + ' ' + scale;
 	};
 	Beat.prototype.activate = function() {
 		this.level = ++id;
