@@ -333,7 +333,6 @@ var Radar = (function(){
 	
 	function update() {
 		clear();
-		step();
 		render();
 
 		requestAnimFrame( update );
@@ -342,94 +341,40 @@ var Radar = (function(){
 	function clear() {
 		context.clearRect( 0, 0, world.width, world.height );
 	}
-
-	function step() {
-		var i, j, k;
-
-		// Active nodes that the mouse touches when pressed down
-		if( mouse.down ) {
-			for( i = 0, len = nodes.length; i < len; i++ ) {
-				var node = nodes[i];
-
-				if( node.distanceTo( mouse.x, mouse.y ) < activateNodeDistance && mouse.exclude.indexOf( node.id ) === -1 ) {
-					if( mouse.action !== 'deactivate' && node.active === false ) {
-						mouse.action = 'activate';
-						node.activate();
-
-						container.className = container.className.replace( 'empty', '' );
-					}
-					else if( mouse.action !== 'activate' && node.active === true ) {
-						mouse.action = 'deactivate';
-						node.deactivate();
-					}
-
-					mouse.exclude.push( node.id );
-				}
-			}
-		}
-
-		for( i = 0; i < nodes.length; i++ ) {
+	
+	function render() {
+		// Render nodes
+		for( var i = 0, len = nodes.length; i < len; i++ ) {
 			var node = nodes[i];
 
-			node.strength = Math.max( node.strength - 0.01, 0 );
-			node.size += ( node.sizeTarget - node.size ) * 0.25;
-
-			node.offsetTargetX *= 0.6;
-			node.offsetTargetY *= 0.6;
-
-			node.offsetX += ( node.offsetTargetX - node.offsetX ) * 0.2;
-			node.offsetY += ( node.offsetTargetY - node.offsetY ) * 0.2;
-
-			if( node.strength > 0.1 ) {
-				for( j = 0, jlen = node.neighbors.length; j < jlen; j++ ) {
-					var neighbor = node.neighbors[j];
-
-					var radians = Math.atan2( node.indexh - neighbor.indexh, node.indexv - neighbor.indexv ),
-						distance = node.distanceToNode( neighbor );
-
-					neighbor.offsetX += Math.sin( radians - Math.PI ) * node.strength * ( WAVE_RADIUS - distance );
-					neighbor.offsetY += Math.cos( radians - Math.PI ) * node.strength * ( WAVE_RADIUS - distance );
-				}
-			}
+			updateNode( node );
+			renderNode( node );
 		}
+
+		// Render beats
+		context.save();
 
 		var activeBeats = 0,
 			firstActiveBeatStrength = 0;
 
-		// Updates the properties of all beats
-		for( i = 0; i < beats.length; i++ ) {
+		for( var i = 0, len = beats.length; i < len; i++ ) {
 			var beat = beats[i];
 
+			updateBeat( beat );
+			renderBeat( beat );
+
 			if( beat.active ) {
-				beat.strength += BEAT_VELOCITY;
 				activeBeats += 1;
 
 				if( firstActiveBeatStrength === 0 ) {
 					firstActiveBeatStrength = beat.strength;
 				}
 			}
-
-			// Remove used up beats
-			if( beat.strength > 1 ) {
-				beat.deactivate();
-			}
-			else if( beat.active ) {
-				// Check for collision with nodes
-				for( j = 0, len = nodes.length; j < len; j++ ) {
-					var node = nodes[j];
-
-					// Distance between the beat wave and node
-					var distance = Math.abs( node.distanceTo( beat.x, beat.y ) - ( beat.size * beat.strength ) );
-
-					if( node.active && node.collisionLevel < beat.level && distance < ACTIVATION_DISTANCE ) {
-						node.collisionLevel = beat.level;
-						node.play( beat.key, beat.scale );
-						node.highlight( 100 );
-					}
-				}
-			}
 		}
 
+		context.restore();
+
+		// Trigger a new beat when needed
 		if( beats.length ) {
 			var nextBeat = currentBeat ? beats[ ( currentBeat.index + 1 ) % beats.length ] : null;
 
@@ -443,77 +388,136 @@ var Radar = (function(){
 			}
 		}
 	}
-	
-	function render() {
-		// Render nodes
-		for( var i = 0, len = nodes.length; i < len; i++ ) {
-			var node = nodes[i];
 
-			// Angle and distance between node and center
-			var radians = Math.atan2( world.center.y - node.y, world.center.x - node.x ),
-				distance = node.distanceTo( world.center.x, world.center.y );
+	function updateNode( node ) {
+		// Active nodes that the mouse touches when pressed down
+		if( mouse.down ) {
+			if( node.distanceTo( mouse.x, mouse.y ) < activateNodeDistance && mouse.exclude.indexOf( node.id ) === -1 ) {
+				if( mouse.action !== 'deactivate' && node.active === false ) {
+					mouse.action = 'activate';
+					node.activate();
 
-			var distanceFactor = distance / Math.min( world.width, world.height );
+					container.className = container.className.replace( 'empty', '' );
+				}
+				else if( mouse.action !== 'activate' && node.active === true ) {
+					mouse.action = 'deactivate';
+					node.deactivate();
+				}
 
-			// Offset for the pin head
-			var ox = node.offsetX + Math.cos( radians - Math.PI ) * ( 30 * distanceFactor ) * node.strength,
-				oy = node.offsetY + Math.sin( radians - Math.PI ) * ( 30 * distanceFactor ) * node.strength;
-
-			if( node.strength ) {
-				var radius = 4 + node.size * 16 * node.strength;
-				
-				context.beginPath();
-				context.arc( node.x, node.y, radius, 0, Math.PI * 2, true );
-
-				var gradient = context.createRadialGradient( node.x, node.y, 0, node.x, node.y, radius );
-				gradient.addColorStop( 0, node.activeColorA );
-				gradient.addColorStop( 1, node.activeColorB );
-
-				context.fillStyle = gradient;
-				context.fill();
+				mouse.exclude.push( node.id );
 			}
+		}
 
-			// Offset for the pin body
-			var tx = Math.cos( radians ) * ( 30 * distanceFactor ),
-				ty = Math.sin( radians ) * ( 30 * distanceFactor );
+		node.strength = Math.max( node.strength - 0.01, 0 );
+		node.size += ( node.sizeTarget - node.size ) * 0.25;
 
-			// Pin body
+		node.offsetTargetX *= 0.6;
+		node.offsetTargetY *= 0.6;
+
+		node.offsetX += ( node.offsetTargetX - node.offsetX ) * 0.2;
+		node.offsetY += ( node.offsetTargetY - node.offsetY ) * 0.2;
+
+		if( node.strength > 0.1 ) {
+			for( j = 0, jlen = node.neighbors.length; j < jlen; j++ ) {
+				var neighbor = node.neighbors[j];
+
+				var radians = Math.atan2( node.indexh - neighbor.indexh, node.indexv - neighbor.indexv ),
+					distance = node.distanceToNode( neighbor );
+
+				neighbor.offsetX += Math.sin( radians - Math.PI ) * node.strength * ( WAVE_RADIUS - distance );
+				neighbor.offsetY += Math.cos( radians - Math.PI ) * node.strength * ( WAVE_RADIUS - distance );
+			}
+		}
+	}
+
+	function renderNode( node ) {
+		// Angle and distance between node and center
+		var radians = Math.atan2( world.center.y - node.y, world.center.x - node.x ),
+			distance = node.distanceTo( world.center.x, world.center.y );
+
+		var distanceFactor = distance / Math.min( world.width, world.height );
+
+		// Offset for the pin head
+		var ox = node.offsetX + Math.cos( radians - Math.PI ) * ( 30 * distanceFactor ) * node.strength,
+			oy = node.offsetY + Math.sin( radians - Math.PI ) * ( 30 * distanceFactor ) * node.strength;
+
+		if( node.strength ) {
+			var radius = 4 + node.size * 16 * node.strength;
+			
 			context.beginPath();
-			context.moveTo( node.x + ox, node.y + oy );
-			context.lineTo( node.x + tx, node.y + ty );
-			context.lineWidth = 1;
-			context.strokeStyle = 'rgba(255,255,255,0.2)';
-			context.stroke();
+			context.arc( node.x, node.y, radius, 0, Math.PI * 2, true );
 
-			// Pin head
-			context.beginPath();
-			context.arc( node.x + ox, node.y + oy, node.size, 0, Math.PI * 2, true );
-			context.fillStyle = node.color;
+			var gradient = context.createRadialGradient( node.x, node.y, 0, node.x, node.y, radius );
+			gradient.addColorStop( 0, node.activeColorA );
+			gradient.addColorStop( 1, node.activeColorB );
+
+			context.fillStyle = gradient;
 			context.fill();
 		}
 
-		// Render beats
-		context.save();
-		for( var i = 0, len = beats.length; i < len; i++ ) {
-			var beat = beats[i];
+		// Offset for the pin body
+		var tx = Math.cos( radians ) * ( 30 * distanceFactor ),
+			ty = Math.sin( radians ) * ( 30 * distanceFactor );
 
-			if( beat.active && beat.strength > 0 ) {
-				context.beginPath();
-				context.arc( beat.x, beat.y, Math.max( (beat.size * beat.strength)-2, 0 ), 0, Math.PI * 2, true );
-				context.lineWidth = 8;
-				context.globalAlpha = 0.2 * ( 1 - beat.strength );
-				context.strokeStyle = beat.color;
-				context.stroke();
+		// Pin body
+		context.beginPath();
+		context.moveTo( node.x + ox, node.y + oy );
+		context.lineTo( node.x + tx, node.y + ty );
+		context.lineWidth = 1;
+		context.strokeStyle = 'rgba(255,255,255,0.2)';
+		context.stroke();
 
-				context.beginPath();
-				context.arc( beat.x, beat.y, beat.size * beat.strength, 0, Math.PI * 2, true );
-				context.lineWidth = 2;
-				context.globalAlpha = 0.8 * ( 1 - beat.strength );
-				context.strokeStyle = beat.color;
-				context.stroke();
+		// Pin head
+		context.beginPath();
+		context.arc( node.x + ox, node.y + oy, node.size, 0, Math.PI * 2, true );
+		context.fillStyle = node.color;
+		context.fill();
+	}
+
+	function updateBeat( beat ) {
+		if( beat.active ) {
+			beat.strength += BEAT_VELOCITY;
+		}
+
+		// Remove used up beats
+		if( beat.strength > 1 ) {
+			beat.deactivate();
+		}
+		else if( beat.active ) {
+			// Check for collision with nodes
+			for( var j = 0, len = nodes.length; j < len; j++ ) {
+				var node = nodes[j];
+
+				if( node.active && node.collisionLevel < beat.level ) {
+					// Distance between the beat wave and node
+					var distance = Math.abs( node.distanceTo( beat.x, beat.y ) - ( beat.size * beat.strength ) );
+
+					if( distance < ACTIVATION_DISTANCE ) {
+						node.collisionLevel = beat.level;
+						node.play( beat.key, beat.scale );
+						node.highlight( 100 );
+					}
+				}
 			}
 		}
-		context.restore();
+	}
+
+	function renderBeat( beat ) {
+		if( beat.active && beat.strength > 0 ) {
+			context.beginPath();
+			context.arc( beat.x, beat.y, Math.max( (beat.size * beat.strength)-2, 0 ), 0, Math.PI * 2, true );
+			context.lineWidth = 8;
+			context.globalAlpha = 0.2 * ( 1 - beat.strength );
+			context.strokeStyle = beat.color;
+			context.stroke();
+
+			context.beginPath();
+			context.arc( beat.x, beat.y, beat.size * beat.strength, 0, Math.PI * 2, true );
+			context.lineWidth = 2;
+			context.globalAlpha = 0.8 * ( 1 - beat.strength );
+			context.strokeStyle = beat.color;
+			context.stroke();
+		}
 	}
 
 	function generateScaleFrom(originalScale, delta) {
@@ -727,6 +731,8 @@ var Radar = (function(){
 
 		this.frequency = notes[ key ][ scale ][ this.note ];
 
+		// This is horribly bad for performance and memory.. Need 
+		// to find a way to cache
 		this.synth = new Synth( this.audiolet, this.frequency, this.attack, this.release );
 		this.synth.connect( this.audiolet.output );
 	};
