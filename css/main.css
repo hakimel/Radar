@@ -10,6 +10,11 @@ body, html {
 	color: #fff;
 	font-size: 11px;
 	background: #111;
+	height: 100%;
+}
+
+.main-container {
+	background: #111;
 }
 
 * {
