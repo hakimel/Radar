@@ -16,42 +16,42 @@ var Radar = (function(){
 
 		// Number of neighboring nodes to push aside on impact
 		WAVE_RADIUS = 3;
-	
+
 	// The world dimensions
-	var world = { 
-		width: 600, 
+	var world = {
+		width: 600,
 		height: 500,
 		center: new Point( 300, 250 )
 	};
-		
+
 	// Mouse input tracking
 	var mouse = {
 		// The current position
 		x: 0,
 		y: 0,
-		
+
 		// The position previous to the current
 		previousX: 0,
 		previousY: 0,
-		
+
 		// The velocity, based on the difference between
 		// the current and next positions
 		velocityX: 0,
 		velocityY: 0,
-		
+
 		// Flags if the mouse is currently pressed down
 		down: false,
 
-		// When dragging the action is defined by the first nodes 
+		// When dragging the action is defined by the first nodes
 		// reaction (activate/deactivate)
 		action: null,
 
-		// A list of node ID's for which action should not be 
+		// A list of node ID's for which action should not be
 		// taken until the next time the mouse is pressed down
 		exclude: []
-		
+
 	};
-	
+
 	var id = 0,
 
 		container,
@@ -88,7 +88,7 @@ var Radar = (function(){
 		nodes = [],
 		savedNodes = [],
 		beats = [];
-	
+
 	// Generate some scales (a, d & e)
 	// Frequencies from http://www.seventhstring.com/resources/notefrequencies.html
 	// Delta ratios are musical harmonies, like http://modularscale.com/
@@ -113,9 +113,9 @@ var Radar = (function(){
 		minColor: 'hsl(100, 90%, 50%)',
 		majColor: 'hsl(80, 90%, 50%)'
 	};
-	
+
 	/**
-	 * 
+	 *
 	 */
 	function initialize() {
 		// Run selectors and cache element references
@@ -128,12 +128,12 @@ var Radar = (function(){
 		sequencerInput = document.querySelector( '#wrapper .sequencer-input' );
 		sequencerInputElements = sequencerInput.querySelectorAll( 'li' );
 		sequencerAddButton = document.querySelector( '#wrapper .sequencer .add-key' );
-		
+
 		if ( canvas && canvas.getContext ) {
 			context = canvas.getContext('2d');
 			context.globalCompositeOperation = 'lighter';
-			
-			// Split the query values into a key/value object 
+
+			// Split the query values into a key/value object
 			location.search.replace( /[A-Z0-9]+?=([\w|\-|\+]*)/gi, function(a) {
 				query[ a.split( '=' ).shift() ] = a.split( '=' ).pop();
 			} );
@@ -143,7 +143,7 @@ var Radar = (function(){
 			}
 
 			addEventListeners();
-			
+
 			// Force an initial layout
 			onWindowResize();
 
@@ -286,7 +286,7 @@ var Radar = (function(){
 		var elementKey = element.getAttribute( 'data-key' ),
 			elementScale = element.getAttribute( 'data-scale' );
 
-		var beat = new Beat( 
+		var beat = new Beat(
 			world.center.x,
 			world.center.y,
 			element,
@@ -330,18 +330,18 @@ var Radar = (function(){
 			beats[i].changeIndex( i );
 		};
 	}
-	
+
 	function update() {
 		clear();
 		render();
 
 		requestAnimFrame( update );
 	}
-	
+
 	function clear() {
 		context.clearRect( 0, 0, world.width, world.height );
 	}
-	
+
 	function render() {
 		// Render nodes
 		for( var i = 0, len = nodes.length; i < len; i++ ) {
@@ -443,7 +443,7 @@ var Radar = (function(){
 
 		if( node.strength ) {
 			var radius = 4 + node.size * 16 * node.strength;
-			
+
 			context.beginPath();
 			context.arc( node.x, node.y, radius, 0, Math.PI * 2, true );
 
@@ -562,7 +562,7 @@ var Radar = (function(){
 		if( 'history' in window && 'pushState' in window.history ) {
 			window.history.pushState( null, null, url );
 		}
-		
+
 		prompt( 'Copy the unique URL and save it or share with friends.', url );
 	}
 
@@ -598,42 +598,42 @@ var Radar = (function(){
 			}
 		}
 	}
-	
+
 	function onCanvasMouseDown( event ) {
 		mouse.down = true;
 		mouse.action = null;
 		mouse.exclude.length = 0;
 	}
-	
+
 	function onDocumentMouseMove( event ) {
 		mouse.previousX = mouse.x;
 		mouse.previousY = mouse.y;
-		
+
 		mouse.x = event.clientX - (window.innerWidth - world.width) * 0.5;
 		mouse.y = event.clientY - (window.innerHeight - world.height) * 0.5;
-		
+
 		mouse.velocityX = Math.abs( mouse.x - mouse.previousX ) / world.width;
 		mouse.velocityY = Math.abs( mouse.y - mouse.previousY ) / world.height;
 	}
-	
+
 	function onDocumentMouseUp( event ) {
 		mouse.down = false;
 		sequencerInput.style.visibility = 'hidden';
 	}
-	
+
 	function onCanvasTouchStart( event ) {
 		if(event.touches.length == 1) {
 			event.preventDefault();
-			
+
 			mouse.x = event.touches[0].pageX - (window.innerWidth - world.width) * 0.5;
 			mouse.y = event.touches[0].pageY - (window.innerHeight - world.height) * 0.5;
-			
+
 			mouse.down = true;
 			mouse.action = null;
 			mouse.exclude.length = 0;
 		}
 	}
-	
+
 	function onCanvasTouchMove( event ) {
 		if(event.touches.length == 1) {
 			event.preventDefault();
@@ -642,11 +642,11 @@ var Radar = (function(){
 			mouse.y = event.touches[0].pageY - (window.innerHeight - world.height) * 0.5 - 20;
 		}
 	}
-	
+
 	function onCanvasTouchEnd( event ) {
 		mouse.down = false;
 	}
-	
+
 	function onWindowResize() {
 		var containerWidth = world.width + sidebar.offsetWidth + 20;
 
@@ -655,7 +655,7 @@ var Radar = (function(){
 		container.style.height = world.height + 'px';
 		container.style.left = ( window.innerWidth - world.width ) / 2 + 'px';
 		container.style.top = ( window.innerHeight - world.height ) / 2 + 'px';
-		
+
 		// Resize the canvas
 		canvas.width = world.width;
 		canvas.height = world.height;
@@ -678,7 +678,7 @@ var Radar = (function(){
 		this.strength = 0;
 		this.size = 1;
 		this.sizeTarget = this.size;
-			
+
 		// This bit of randomness should make sure that the notes are different
 		// and unpredictable, yet reproducably so when the same seed is used.
 		// indexv * NODES_X + indexh reproduces the overall node number,
@@ -701,7 +701,7 @@ var Radar = (function(){
 	Node.prototype = new Point();
 	Node.prototype.generate = function() {
 		this.audiolet = new Audiolet( 44100, 2 );
-		
+
 		var factorY = 1 - ( this.y / world.height ),
 			factorD = this.distanceTo( world.center.x, world.center.y );
 
@@ -731,7 +731,7 @@ var Radar = (function(){
 
 		this.frequency = notes[ key ][ scale ][ this.note ];
 
-		// This is horribly bad for performance and memory.. Need 
+		// This is horribly bad for performance and memory.. Need
 		// to find a way to cache
 		this.synth = new Synth( this.audiolet, this.frequency, this.attack, this.release );
 		this.synth.connect( this.audiolet.output );
@@ -739,7 +739,7 @@ var Radar = (function(){
 	Node.prototype.highlight = function( delay ) {
 		if( delay ) {
 			setTimeout( function() {
-				
+
 				this.strength = 1;
 
 			}.bind( this ), delay );
@@ -755,9 +755,9 @@ var Radar = (function(){
 	function Beat( x, y, element, key, scale, index ) {
 		// invoke super
 		this.constructor.apply( this, arguments );
-		
+
 		this.element = element;
-		
+
 		this.changeIndex( index );
 		this.generate( key, scale );
 
@@ -848,7 +848,7 @@ var Radar = (function(){
 		AudioletGroup.apply(this, [audiolet, 0, 1]);
 		// Basic wave
 		this.sine = new Sine(audiolet, frequency);
-		
+
 		// Gain envelope
 		this.gain = new Gain(audiolet);
 		this.env = new PercussiveEnvelope(audiolet, 1, attack, release,
@@ -865,9 +865,9 @@ var Radar = (function(){
 		// Envelope
 		this.env.connect(this.envMulAdd);
 		this.envMulAdd.connect(this.gain, 0, 1);
-	}; 
+	};
 	Synth.prototype = new AudioletGroup();
-	
+
 	initialize();
-	
+
 })();

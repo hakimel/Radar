@@ -1,3 +1,323 @@
+function AudioFileRequest(url, async) {
+    this.url = url;
+    if (typeof async == 'undefined' || async == null) {
+        async = true;
+    }
+    this.async = async;
+    var splitURL = url.split('.');
+    this.extension = splitURL[splitURL.length - 1].toLowerCase();
+}
+
+AudioFileRequest.prototype.onSuccess = function(decoded) {
+};
+
+AudioFileRequest.prototype.onFailure = function(decoded) {
+};
+
+
+AudioFileRequest.prototype.send = function() {
+    if (this.extension != 'wav' &&
+        this.extension != 'aiff' &&
+        this.extension != 'aif') {
+        this.onFailure();
+        return;
+    }
+
+    var request = new XMLHttpRequest();
+    request.open('GET', this.url, this.async);
+    request.overrideMimeType('text/plain; charset=x-user-defined');
+    request.onreadystatechange = function(event) {
+        if (request.readyState == 4) {
+            if (request.status == 200 || request.status == 0) {
+                this.handleResponse(request.responseText);
+            }
+            else {
+                this.onFailure();
+            }
+        }
+    }.bind(this);
+    request.send(null);
+};
+
+AudioFileRequest.prototype.handleResponse = function(data) {
+    var decoder, decoded;
+    if (this.extension == 'wav') {
+        decoder = new WAVDecoder();
+        decoded = decoder.decode(data);
+    }
+    else if (this.extension == 'aiff' || this.extension == 'aif') {
+        decoder = new AIFFDecoder();
+        decoded = decoder.decode(data);
+    }
+    this.onSuccess(decoded);
+};
+
+
+function Decoder() {
+}
+
+Decoder.prototype.readString = function(data, offset, length) {
+    return data.slice(offset, offset + length);
+};
+
+Decoder.prototype.readIntL = function(data, offset, length) {
+    var value = 0;
+    for (var i = 0; i < length; i++) {
+        value = value + ((data.charCodeAt(offset + i) & 0xFF) *
+                         Math.pow(2, 8 * i));
+    }
+    return value;
+};
+
+Decoder.prototype.readChunkHeaderL = function(data, offset) {
+    var chunk = {};
+    chunk.name = this.readString(data, offset, 4);
+    chunk.length = this.readIntL(data, offset + 4, 4);
+    return chunk;
+};
+
+Decoder.prototype.readIntB = function(data, offset, length) {
+    var value = 0;
+    for (var i = 0; i < length; i++) {
+        value = value + ((data.charCodeAt(offset + i) & 0xFF) *
+                         Math.pow(2, 8 * (length - i - 1)));
+    }
+    return value;
+};
+
+Decoder.prototype.readChunkHeaderB = function(data, offset) {
+    var chunk = {};
+    chunk.name = this.readString(data, offset, 4);
+    chunk.length = this.readIntB(data, offset + 4, 4);
+    return chunk;
+};
+
+Decoder.prototype.readFloatB = function(data, offset) {
+    var expon = this.readIntB(data, offset, 2);
+    var range = 1 << 16 - 1;
+    if (expon >= range) {
+        expon |= ~(range - 1);
+    }
+
+    var sign = 1;
+    if (expon < 0) {
+        sign = -1;
+        expon += range;
+    }
+
+    var himant = this.readIntB(data, offset + 2, 4);
+    var lomant = this.readIntB(data, offset + 6, 4);
+    var value;
+    if (expon == himant == lomant == 0) {
+        value = 0;
+    }
+    else if (expon == 0x7FFF) {
+        value = Number.MAX_VALUE;
+    }
+    else {
+        expon -= 16383;
+        value = (himant * 0x100000000 + lomant) * Math.pow(2, expon - 63);
+    }
+    return sign * value;
+};
+
+function WAVDecoder(data) {
+}
+
+WAVDecoder.prototype.__proto__ = Decoder.prototype;
+
+WAVDecoder.prototype.decode = function(data) {
+    var decoded = {};
+    var offset = 0;
+    // Header
+    var chunk = this.readChunkHeaderL(data, offset);
+    offset += 8;
+    if (chunk.name != 'RIFF') {
+        console.error('File is not a WAV');
+        return null;
+    }
+
+    var fileLength = chunk.length;
+    fileLength += 8;
+
+    var wave = this.readString(data, offset, 4);
+    offset += 4;
+    if (wave != 'WAVE') {
+        console.error('File is not a WAV');
+        return null;
+    }
+
+    while (offset < fileLength) {
+        var chunk = this.readChunkHeaderL(data, offset);
+        offset += 8;
+        if (chunk.name == 'fmt ') {
+            // File encoding
+            var encoding = this.readIntL(data, offset, 2);
+            offset += 2;
+
+            if (encoding != 0x0001) {
+                // Only support PCM
+                console.error('Cannot decode non-PCM encoded WAV file');
+                return null;
+            }
+
+            // Number of channels
+            var numberOfChannels = this.readIntL(data, offset, 2);
+            offset += 2;
+
+            // Sample rate
+            var sampleRate = this.readIntL(data, offset, 4);
+            offset += 4;
+
+            // Ignore bytes/sec - 4 bytes
+            offset += 4;
+
+            // Ignore block align - 2 bytes
+            offset += 2;
+
+            // Bit depth
+            var bitDepth = this.readIntL(data, offset, 2);
+            var bytesPerSample = bitDepth / 8;
+            offset += 2;
+        }
+
+        else if (chunk.name == 'data') {
+            // Data must come after fmt, so we are okay to use it's variables
+            // here
+            var length = chunk.length / (bytesPerSample * numberOfChannels);
+            var channels = [];
+            for (var i = 0; i < numberOfChannels; i++) {
+                channels.push(new Float32Array(length));
+            }
+
+            for (var i = 0; i < numberOfChannels; i++) {
+                var channel = channels[i];
+                for (var j = 0; j < length; j++) {
+                    var index = offset;
+                    index += (j * numberOfChannels + i) * bytesPerSample;
+                    // Sample
+                    var value = this.readIntL(data, index, bytesPerSample);
+                    // Scale range from 0 to 2**bitDepth -> -2**(bitDepth-1) to
+                    // 2**(bitDepth-1)
+                    var range = 1 << bitDepth - 1;
+                    if (value >= range) {
+                        value |= ~(range - 1);
+                    }
+                    // Scale range to -1 to 1
+                    channel[j] = value / range;
+                }
+            }
+            offset += chunk.length;
+        }
+        else {
+            offset += chunk.length;
+        }
+    }
+    decoded.sampleRate = sampleRate;
+    decoded.bitDepth = bitDepth;
+    decoded.channels = channels;
+    decoded.length = length;
+    return decoded;
+};
+
+
+function AIFFDecoder() {
+}
+
+AIFFDecoder.prototype.__proto__ = Decoder.prototype;
+
+AIFFDecoder.prototype.decode = function(data) {
+    var decoded = {};
+    var offset = 0;
+    // Header
+    var chunk = this.readChunkHeaderB(data, offset);
+    offset += 8;
+    if (chunk.name != 'FORM') {
+        console.error('File is not an AIFF');
+        return null;
+    }
+
+    var fileLength = chunk.length;
+    fileLength += 8;
+
+    var aiff = this.readString(data, offset, 4);
+    offset += 4;
+    if (aiff != 'AIFF') {
+        console.error('File is not an AIFF');
+        return null;
+    }
+
+    while (offset < fileLength) {
+        var chunk = this.readChunkHeaderB(data, offset);
+        offset += 8;
+        if (chunk.name == 'COMM') {
+            // Number of channels
+            var numberOfChannels = this.readIntB(data, offset, 2);
+            offset += 2;
+
+            // Number of samples
+            var length = this.readIntB(data, offset, 4);
+            offset += 4;
+
+            var channels = [];
+            for (var i = 0; i < numberOfChannels; i++) {
+                channels.push(new Float32Array(length));
+            }
+
+            // Bit depth
+            var bitDepth = this.readIntB(data, offset, 2);
+            var bytesPerSample = bitDepth / 8;
+            offset += 2;
+
+            // Sample rate
+            var sampleRate = this.readFloatB(data, offset);
+            offset += 10;
+        }
+        else if (chunk.name == 'SSND') {
+            // Data offset
+            var dataOffset = this.readIntB(data, offset, 4);
+            offset += 4;
+
+            // Ignore block size
+            offset += 4;
+
+            // Skip over data offset
+            offset += dataOffset;
+
+            for (var i = 0; i < numberOfChannels; i++) {
+                var channel = channels[i];
+                for (var j = 0; j < length; j++) {
+                    var index = offset;
+                    index += (j * numberOfChannels + i) * bytesPerSample;
+                    // Sample
+                    var value = this.readIntB(data, index, bytesPerSample);
+                    // Scale range from 0 to 2**bitDepth -> -2**(bitDepth-1) to
+                    // 2**(bitDepth-1)
+                    var range = 1 << bitDepth - 1;
+                    if (value >= range) {
+                        value |= ~(range - 1);
+                    }
+                    // Scale range to -1 to 1
+                    channel[j] = value / range;
+                }
+            }
+            offset += chunk.length - dataOffset - 8;
+        }
+        else {
+            offset += chunk.length;
+        }
+    }
+    decoded.sampleRate = sampleRate;
+    decoded.bitDepth = bitDepth;
+    decoded.channels = channels;
+    decoded.length = length;
+    return decoded;
+};
+
+/*
+ * @depends ../audiofile/audiofile.js
+ */
+
 /**
  * A variable size multi-channel audio buffer.
  *
@@ -729,7 +1049,7 @@ AudioletDevice.prototype.tick = function(buffer, numberOfChannels) {
             for (var j = this.nodes.length - 1; j > 0; j--) {
                 this.nodes[j].tick();
             }
-            // Cut down tick to just sum the input samples 
+            // Cut down tick to just sum the input samples
             this.createInputSamples();
 
             for (var j = 0; j < numberOfChannels; j++) {
@@ -771,7 +1091,7 @@ AudioletDevice.prototype.pause = function() {
  * Restart the output stream.
  */
 AudioletDevice.prototype.play = function() {
-   this.paused = false; 
+   this.paused = false;
 };
 
 /**
@@ -2365,7 +2685,7 @@ BufferPlayer.prototype.generate = function() {
         var inputChannel = this.buffer.getChannelData(i);
         output.samples[i] = inputChannel[Math.floor(this.position)];
     }
-    
+
     this.position += playbackRate;
 
     if (this.position >= this.buffer.length) {
@@ -3408,7 +3728,7 @@ IFFT.prototype.transform = function() {
         this.reverseReal[i] = this.realBuffer[this.reverseTable[i]];
         this.reverseImaginary[i] = this.imaginaryBuffer[this.reverseTable[i]];
     }
- 
+
     this.realBuffer.set(this.reverseReal);
     this.imaginaryBuffer.set(this.reverseImaginary);
 
@@ -3608,7 +3928,7 @@ Limiter.prototype.generate = function() {
         else {
             follower = release * (follower - absValue) + absValue;
         }
-        
+
         var diff = follower - threshold;
         if (diff > 0) {
             output.samples[i] = value / (1 + diff);
@@ -4425,7 +4745,7 @@ var WebKitBufferPlayer = function(audiolet, onComplete) {
 
     // Until we are loaded, output no channels.
     this.setNumberOfOutputChannels(0, 0);
-    
+
     if (!this.isWebKit) {
         return;
     }
@@ -4469,7 +4789,7 @@ WebKitBufferPlayer.prototype.stop = function() {
     this.endTime = null;
 
     this.setNumberOfOutputChannels(0);
-   
+
     this.disconnectWebKitNodes();
 };
 
@@ -4961,7 +5281,7 @@ Tanh.prototype.generate = function() {
         var value = input.samples[i];
         output.samples[i] = (Math.exp(value) - Math.exp(-value)) /
                             (Math.exp(value) + Math.exp(-value));
-    } 
+    }
 };
 
 /**
@@ -5952,7 +6272,7 @@ void function (prefixes, urlPrefixes) {
         var b, a = prefixes.slice();
 
         for (b=a.shift(); typeof b !== 'undefined'; b=a.shift()) {
-            b = Function('return typeof ' + b + name + 
+            b = Function('return typeof ' + b + name +
                 '=== "undefined" ? undefined : ' +
                 b + name)();
 
@@ -6299,7 +6619,7 @@ void function (Sink) {
 Sink.sinks('dummy', function () {
     var self = this;
     self.start.apply(self, arguments);
-    
+
     function bufferFill () {
         var soundData = new Float32Array(self.bufferSize * self.channelCount);
         self.process(soundData, self.channelCount);
@@ -6344,7 +6664,7 @@ sinks('wav', function () {
         zeroData        = new Float32Array(self.bufferSize * self.channelCount);
 
     if (!newAudio().canPlayType('audio/wav; codecs=1') || !btoa) throw 0;
-    
+
     function bufferFill () {
         if (self._audio.hasNextFrame) return;
 
@@ -6364,7 +6684,7 @@ sinks('wav', function () {
 
         if (!self._audio.currentFrame.src) self._audio.nextClip();
     }
-    
+
     self.kill       = Sink.doInterval(bufferFill, 40);
     self._bufferFill    = bufferFill;
     self._audio     = audio;
@@ -6425,14 +6745,13 @@ var AudioContext = typeof window === 'undefined' ? null : window.webkitAudioCont
 */
 
 sinks('webaudio', function (readFn, channelCount, bufferSize, sampleRate) {
-
     var self        = this,
         context     = sinks.webaudio.getContext(),
         node        = null,
         soundData   = null,
         zeroBuffer  = null;
     self.start.apply(self, arguments);
-    node = context.createJavaScriptNode(self.bufferSize, self.channelCount, self.channelCount);
+    node = context.createScriptProcessor(self.bufferSize, self.channelCount, self.channelCount);
 
     function bufferFill(e) {
         var outputBuffer    = e.outputBuffer,
@@ -6443,7 +6762,7 @@ sinks('webaudio', function (readFn, channelCount, bufferSize, sampleRate) {
             tail;
 
         self.ready();
-        
+
         soundData   = soundData && soundData.length === l * channelCount ? soundData : new Float32Array(l * channelCount);
         zeroBuffer  = zeroBuffer && zeroBuffer.length === soundData.length ? zeroBuffer : new Float32Array(l * channelCount);
         soundData.set(zeroBuffer);
@@ -6495,18 +6814,9 @@ sinks.webkit = sinks.webaudio;
 
 sinks.webaudio.fix82795 = fixChrome82795;
 
-// var audioContextCount = 0,
-//     audioContextLimit = 4,
-//     audioContexts = [];
-
-// for( var i = 0; i < audioContextLimit; i++ ) {
-//     audioContexts.push( new AudioContext() );
-// }
-
 sinks.webaudio.getContext = function () {
     // For now, we have to accept that the AudioContext is at 48000Hz, or whatever it decides.
     var context = new AudioContext(/*sampleRate*/);
-    // var context = audioContexts[ (audioContextCount++) % audioContextLimit ];
 
     sinks.webaudio.getContext = function () {
         return context;
@@ -6576,7 +6886,7 @@ Sink.sinks('worker', function () {
             size        = outputBuffer.size,
             channels    = new Array(channelCount),
             tail;
-        
+
         soundData   = soundData && soundData.length === l * channelCount ? soundData : new Float32Array(l * channelCount);
         zeroBuffer  = zeroBuffer && zeroBuffer.length === soundData.length ? zeroBuffer : new Float32Array(l * channelCount);
         soundData.set(zeroBuffer);
@@ -7180,7 +7490,7 @@ proto.writeBuffersAsync = function (buffer) {
             bufLength   = buf.b.length;
             offset      = buf.d;
             buf.d       -= Math.min(offset, l);
-            
+
             for (n=0; n + offset < l && n < bufLength; n++) {
                 buffer[n + offset] += buf.b[n];
             }

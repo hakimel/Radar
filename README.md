@@ -8,4 +8,4 @@ An audio-visual experiment that uses [Audiolet](https://github.com/oampo/Audiole
 
 MIT licensed
 
-Copyright (C) 2012 Hakim El Hattab, http://hakim.se
+Copyright (C) 2014 Hakim El Hattab, http://hakim.se
